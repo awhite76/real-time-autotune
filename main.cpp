@@ -6,9 +6,11 @@
 
 #define T_MS 15
 #define SAMPLE_RATE 48000
-#define CHANNELS 1
+#define CHANNELS 2
 #define PERIOD_FRAMES (SAMPLE_RATE * T_MS / 1000)
 #define BUFFER_FRAMES (PERIOD_FRAMES * 2)
+
+using namespace std;
 
 static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 {
@@ -110,8 +112,8 @@ static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 int main(int argc, char **argv)
 {
     // Usage: ./main <capture_dev> <playback_dev>
-    string cap_dev = (argc > 1) ? argv[1] : "hw:0,0";
-    string pb_dev = (argc > 2) ? argv[2] : "hw:0,0";
+    string cap_dev = (argc > 1) ? argv[1] : "hw:2,0";
+    string pb_dev = (argc > 2) ? argv[2] : "hw:2,0";
 
     snd_pcm_t *capture_handle = nullptr;
     snd_pcm_t *playback_handle = nullptr;
