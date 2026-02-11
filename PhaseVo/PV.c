@@ -1,5 +1,5 @@
 // PV.c
-// Build: gcc -O2 -Wall PV.c -o pv
+// Build: gcc -O2 -Wall PV.c -o pv -lfftw3f -lm
 // Run:   ./pv in.wav out.wav
 
 #include <stdio.h>
@@ -37,7 +37,7 @@ typedef struct {
 typedef struct {
     uint16_t audio_format;    // 1 = PCM
     uint16_t num_channels;
-    uint32_t sample_rate;
+    uint32_t sample_rate; // Hz
     uint32_t byte_rate;
     uint16_t block_align;
     uint16_t bits_per_sample;
@@ -72,79 +72,6 @@ static void hann_window(float *w, int N) {
     const float two_pi = 2.0f * (float)M_PI;
     for (int n = 0; n < N; n++) {
         w[n] = 0.5f - 0.5f * cosf(two_pi * (float)n / (float)N);
-    }
-}
-
-static int stft_init(STFT *s, int N, int H, int num_frames) {
-    memset(s, 0, sizeof(*s));
-    s->N = N;
-    s->H = H;
-    s->num_frames = num_frames;
-
-    s->window = (float*)fftwf_malloc(sizeof(float) * (size_t)N);
-    s->time_buf = (float*)fftwf_malloc(sizeof(float) * (size_t)N);
-    s->temp_out = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex) * (size_t)(N/2 + 1));
-    s->spec = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex) * (size_t)num_frames * (size_t)(N/2 + 1));
-
-    if (!s->window || !s->time_buf || !s->temp_out || !s->spec) return -1;
-
-    hann_window(s->window, N);
-
-    // FFTW plan: real input -> complex output
-    s->plan = fftwf_plan_dft_r2c_1d(N, s->time_buf, s->temp_out, FFTW_MEASURE);
-    if (!s->plan) return -1;
-
-    return 0;
-}
-
-static void stft_free(STFT *s) {
-    if (s->plan) fftwf_destroy_plan(s->plan);
-    if (s->window) fftwf_free(s->window);
-    if (s->time_buf) fftwf_free(s->time_buf);
-    if (s->temp_out) fftwf_free(s->temp_out);
-    if (s->spec) fftwf_free(s->spec);
-    memset(s, 0, sizeof(*s));
-}
-
-
-/* Make test sine wave */
-static void make_test_sine(float *x, int L, float sr, float freq) {
-    const float w = 2.0f * (float)M_PI * freq / sr;
-    for (int n = 0; n < L; n++) x[n] = sinf(w * (float)n);
-}
-
-// Compute how many frames you’ll produce for a signal of length L
-// This version includes a final zero-padded frame if needed.
-static int stft_num_frames(int L, int N, int H) {
-    if (L <= 0) return 0;
-    if (L <= N) return 1;
-    int frames = 1 + (int)ceilf((float)(L - N) / (float)H);
-    return frames;
-}
-
-// STFT: input x[0..L-1] -> s->spec
-// spec is stored frame-major: spec[frame*(N/2+1) + bin]
-static void stft_compute(STFT *s, const float *x, int L) {
-    const int N = s->N;
-    const int H = s->H;
-    const int K = N/2 + 1;
-
-    for (int f = 0; f < s->num_frames; f++) {
-        int start = f * H;
-
-        // gather frame with zero-padding
-        for (int n = 0; n < N; n++) {
-            int idx = start + n;
-            float sample = (idx < L) ? x[idx] : 0.0f;
-            s->time_buf[n] = sample * s->window[n];
-        }
-
-        // FFT
-        fftwf_execute(s->plan);
-
-        // copy to output array
-        fftwf_complex *dst = s->spec + (size_t)f * (size_t)K;
-        memcpy(dst, s->temp_out, sizeof(fftwf_complex) * (size_t)K);
     }
 }
 
@@ -254,33 +181,6 @@ static int save_wav_pcm(const char *path, const WavFile *w) {
     return 0;
 }
 
-static void reverse_frames_pcm16(WavFile *w) {
-    if (w->fmt.bits_per_sample != 16) {
-        fprintf(stderr, "reverse_frames_pcm16: requires 16-bit PCM\n");
-        return;
-    }
-
-    const uint32_t frame_bytes = w->fmt.block_align;  // channels * 2
-    if (frame_bytes == 0 || (w->data_bytes % frame_bytes) != 0) {
-        fprintf(stderr, "reverse_frames_pcm16: bad block_align/data_bytes\n");
-        return;
-    }
-
-    uint32_t frames = w->data_bytes / frame_bytes;
-    uint8_t *tmp = (uint8_t*)malloc(frame_bytes);
-    if (!tmp) return;
-
-    for (uint32_t i = 0; i < frames / 2; i++) {
-        uint8_t *a = w->data + i * frame_bytes;
-        uint8_t *b = w->data + (frames - 1 - i) * frame_bytes;
-        memcpy(tmp, a, frame_bytes);
-        memcpy(a, b, frame_bytes);
-        memcpy(b, tmp, frame_bytes);
-    }
-
-    free(tmp);
-}
-
 static inline float princargf(float x) {
     // wrap to (-pi, pi]
     x = fmodf(x + (float)M_PI, 2.0f * (float)M_PI);
@@ -292,47 +192,28 @@ static inline float fast_atan2f(float y, float x) {
     return atan2f(y, x);
 }
 
-static void phase_vocoder(WavFile *w) {
-    if (w->fmt.bits_per_sample != 16 || w->fmt.audio_format != 1) {
-        fprintf(stderr, "phase_vocoder: requires 16-bit PCM WAV\n");
-        return;
-    }
+static int phase_vocoder(WavFile *w, float time_stretch) {
 
+    /* Get data from wav file */
     const int C = (int)w->fmt.num_channels;
     const int sr = (int)w->fmt.sample_rate;
     const uint32_t frame_bytes = w->fmt.block_align; // C * 2
-    if (C <= 0 || frame_bytes != (uint32_t)(C * 2)) {
-        fprintf(stderr, "phase_vocoder: unexpected block_align/channels\n");
-        return;
-    }
-    if ((w->data_bytes % frame_bytes) != 0) {
-        fprintf(stderr, "phase_vocoder: data_bytes not aligned to frames\n");
-        return;
-    }
-
-    const int L = (int)(w->data_bytes / frame_bytes); // samples per channel
+    const int L = (int)(w->data_bytes / frame_bytes); // number of frames (samples per channel)
     const int16_t *pcm = (const int16_t*)w->data;
 
-    // --------------------------
-    // Phase vocoder parameters
-    // --------------------------
+    /* Phase Vocoder parameters */
     const int N  = 1024;   // FFT / window size
     const int Ha = 256;    // analysis hop (75% overlap)
-    const float time_stretch = 0.50f; // >1.0 = longer, <1.0 = shorter
     const int Hs = (int)lroundf((float)Ha * time_stretch); // synthesis hop
 
-    if (N <= 0 || Ha <= 0 || Hs <= 0 || Ha > N) {
-        fprintf(stderr, "phase_vocoder: bad N/Ha/Hs\n");
-        return;
-    }
-
     const int K = N/2 + 1;
-    const int num_frames = stft_num_frames(L, N, Ha);
-    const int out_L = (num_frames - 1) * Hs + N; // output samples per channel
+    //const int num_windows = stft_num_frames(L, N, Ha);
+    const int num_windows = 1 + (int)ceilf((float)(L - N) / (float)Ha); // number of windows for the STFT
+    const int out_L = (num_windows - 1) * Hs + N; // output samples per channel
 
-    // window (periodic Hann like your STFT)
+    // window
     float *win = (float*)fftwf_malloc(sizeof(float) * (size_t)N);
-    if (!win) return;
+    if (!win) return -1;
     hann_window(win, N);
 
     // FFTW buffers/plans
@@ -346,7 +227,7 @@ static void phase_vocoder(WavFile *w) {
         if (ifft_buf) fftwf_free(ifft_buf);
         if (X) fftwf_free(X);
         if (Y) fftwf_free(Y);
-        return;
+        return -1;
     }
 
     fftwf_plan p_r2c = fftwf_plan_dft_r2c_1d(N, time_buf, X, FFTW_MEASURE);
@@ -355,7 +236,7 @@ static void phase_vocoder(WavFile *w) {
         if (p_r2c) fftwf_destroy_plan(p_r2c);
         if (p_c2r) fftwf_destroy_plan(p_c2r);
         fftwf_free(win); fftwf_free(time_buf); fftwf_free(ifft_buf); fftwf_free(X); fftwf_free(Y);
-        return;
+        return -1;
     }
 
     // Output buffers per channel
@@ -365,7 +246,7 @@ static void phase_vocoder(WavFile *w) {
         free(out); free(norm);
         fftwf_destroy_plan(p_r2c); fftwf_destroy_plan(p_c2r);
         fftwf_free(win); fftwf_free(time_buf); fftwf_free(ifft_buf); fftwf_free(X); fftwf_free(Y);
-        return;
+        return -1;
     }
 
     // Phase vocoder state per channel per bin
@@ -376,7 +257,7 @@ static void phase_vocoder(WavFile *w) {
         free(out); free(norm);
         fftwf_destroy_plan(p_r2c); fftwf_destroy_plan(p_c2r);
         fftwf_free(win); fftwf_free(time_buf); fftwf_free(ifft_buf); fftwf_free(X); fftwf_free(Y);
-        return;
+        return -1;
     }
 
     // Precompute expected phase advance per bin for analysis hop
@@ -386,7 +267,7 @@ static void phase_vocoder(WavFile *w) {
         free(out); free(norm);
         fftwf_destroy_plan(p_r2c); fftwf_destroy_plan(p_c2r);
         fftwf_free(win); fftwf_free(time_buf); fftwf_free(ifft_buf); fftwf_free(X); fftwf_free(Y);
-        return;
+        return -1;
     }
     for (int k = 0; k < K; k++) {
         omega[k] = 2.0f * (float)M_PI * (float)k / (float)N; // radians/sample
@@ -401,7 +282,7 @@ static void phase_vocoder(WavFile *w) {
 
         // init phases from first frame
         // (we’ll do it naturally on f=0)
-        for (int f = 0; f < num_frames; f++) {
+        for (int f = 0; f < num_windows; f++) {
             const int in_start  = f * Ha;
             const int out_start = f * Hs;
 
@@ -491,7 +372,7 @@ static void phase_vocoder(WavFile *w) {
         free(out); free(norm);
         fftwf_destroy_plan(p_r2c); fftwf_destroy_plan(p_c2r);
         fftwf_free(win); fftwf_free(time_buf); fftwf_free(ifft_buf); fftwf_free(X); fftwf_free(Y);
-        return;
+        return -1;
     }
 
     int16_t *out_pcm = (int16_t*)new_data;
@@ -525,6 +406,8 @@ static void phase_vocoder(WavFile *w) {
 
     fprintf(stderr, "phase_vocoder: sr=%d, ch=%d, in_L=%d, out_L=%d, stretch=%.3f\n",
             sr, C, L, out_L, time_stretch);
+
+    return 0;
 }
 
 static void print_info(const WavFile *w) {
@@ -554,8 +437,9 @@ int main(int argc, char **argv) {
 
     print_info(&w);
 
-    // --- EDIT HERE ---
-    phase_vocoder(&w);
+    phase_vocoder(&w, 2.0);
+
+    w.fmt.sample_rate = w.fmt.sample_rate * 2;
 
     if (save_wav_pcm(argv[2], &w) != 0) {
         fprintf(stderr, "Failed to save wav\n");
