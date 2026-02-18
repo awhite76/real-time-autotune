@@ -23,7 +23,7 @@ void hann_window(float *w, int N) {
 
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
                   float *out, float *norm, uint8_t *new_data, float* prev_phase,float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                  float time_stretch, int num_windows, fftwf_plan p_r2c, ftwf_plan p_c2r) {
+                  float time_stretch, int num_windows, int Hs, int out_L, uint32_t out_data_bytes, fftwf_plan p_r2c, fftwf_plan p_c2r) {
 
     /* Get data from wav file */
     //const int C = (int)w->fmt.num_channels;
@@ -34,12 +34,14 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
     /* Phase Vocoder parameters */
     // const int N  = 1024;   // FFT / window size
     // const int Ha = 256;    // analysis hop (75% overlap)
-    const int Hs = (int)lroundf(ANALYSIS_HOP * time_stretch); // synthesis hop
+
+    // TODO: Pass this in
+    // const int Hs = (int)lroundf(ANALYSIS_HOP * time_stretch); // synthesis hop
 
     //const int K = N/2 + 1;
     //const int num_windows = stft_num_frames(L, N, Ha);
     //const int num_windows = 1 + (int)ceilf((float)(L - N) / (float)Ha); // number of windows for the STFT
-    const int out_L = (num_windows - 1) * Hs + WINDOW_SIZE; // output samples per channel
+    //const int out_L = (num_windows - 1) * Hs + WINDOW_SIZE; // output samples per channel
 
     // window
     //float *win = (float*)fftwf_malloc(sizeof(float) * (size_t)N);
@@ -132,7 +134,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
             fftwf_execute(p_r2c);
 
             // Build Y with phase propagation
-            for (int k = 0; k < BINS; k++) {
+            for (int k = 0; k < FREQ_BINS; k++) {
                 const float re = X[k][0];
                 const float im = X[k][1];
 
@@ -173,7 +175,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
                 float sample = ifft_buf[n] * invN;
                 float wsample = sample * win[n];
 
-                out[(size_t)oidx * (size_t)C + (size_t)ch] += wsample;
+                out[(size_t)oidx * (size_t)NUM_CHANNELS + (size_t)ch] += wsample;
 
                 if (ch == 0) {
                     // window-squared normalization for COLA robustness
@@ -194,7 +196,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
     }
 
     // Convert back to int16 PCM interleaved
-    const uint32_t out_data_bytes = (uint32_t)((size_t)out_L * NUM_CHANNELS * sizeof(int16_t));
+    // const uint32_t out_data_bytes = (uint32_t)((size_t)out_L * NUM_CHANNELS * sizeof(int16_t));
     //uint8_t *new_data = (uint8_t*)malloc(out_data_bytes);
     //if (!new_data) {
     //    // cleanup and leave wav unchanged
