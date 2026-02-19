@@ -375,7 +375,7 @@ static int phase_vocoder(WavFile *w, float time_stretch) {
         return -1;
     }
 
-    //int16_t *out_pcm = (int16_t*)new_data;
+    int16_t *out_pcm = (int16_t*)new_data;
     for (int n = 0; n < out_L; n++) {
         for (int ch = 0; ch < C; ch++) {
             float v = out[(size_t)n * (size_t)C + (size_t)ch];
@@ -385,7 +385,7 @@ static int phase_vocoder(WavFile *w, float time_stretch) {
             int32_t q = (int32_t)lroundf(v * 32767.0f);
             if (q > 32767) q = 32767;
             if (q < -32768) q = -32768;
-            new_data[(size_t)n * (size_t)C + (size_t)ch] = (int16_t)q;
+            out_pcm[(size_t)n * (size_t)C + (size_t)ch] = (int16_t)q;
         }
     }
 
