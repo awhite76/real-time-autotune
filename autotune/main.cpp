@@ -115,7 +115,6 @@ static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 
     return true;
 }
-
 int main(int argc, char **argv)
 {
     string cap_dev = (argc > 1) ? argv[1] : "hw:2,0";
