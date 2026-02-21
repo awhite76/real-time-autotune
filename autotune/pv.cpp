@@ -1,5 +1,8 @@
 #include "pv.hpp"
 
+#include <fftw3.h>
+#include <math.h>
+
 
 float princargf(float x) {
     // wrap to (-pi, pi]
@@ -22,7 +25,7 @@ void hann_window(float *w, int N) {
 }
 
 void settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
-                    float **out, float **norm, uint8_t **new_data, float **prev_phase, float **sum_phase, 
+                    float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase, 
                     fftwf_complex **X, fftwf_complex **Y, 
                     float time_stretch, int* num_windows, int* Hs, 
                     int* out_L, uint32_t out_data_16_bits, fftwf_plan* p_r2c, fftwf_plan* p_c2r)

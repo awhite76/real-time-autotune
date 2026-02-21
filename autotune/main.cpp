@@ -117,6 +117,8 @@ static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 }
 int main(int argc, char **argv)
 {
+
+    /* Speaker settup */
     string cap_dev = (argc > 1) ? argv[1] : "hw:2,0";
     string pb_dev = (argc > 2) ? argv[2] : "hw:2,0";
 
@@ -184,6 +186,16 @@ int main(int argc, char **argv)
          << CHANNELS << " ch\n"
          << "Capture: " << cap_dev << "  Playback: " << pb_dev << "\n";
 
+    /* Phase Vo settup */
+
+    float *time_buf; float *win; float *ifft_buf; float *omega; float *out;
+    float *norm; uint8_t *new_data; float *prev_phase; float *sum_phase;
+    fftwf_complex *X; fftwf_complex *Y; float time_stretch = 2.00; int num_windows;
+    int Hs; int out_L; uint32_t out_data_16_bits; fftwf_plan p_r2c; fftwf_plan p_c2r;
+
+    settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase, 
+                    &X, &Y, time_stretch, &num_windows, &Hs, &out_L, out_data_16_bits, &p_r2c, &p_c2r);
+
     while (true)
     {
         // Capture PERIOD_FRAMES
@@ -207,13 +219,17 @@ int main(int argc, char **argv)
             rcvd += r;
         }
 
+        /* Run phase vo */
+        phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, 
+                      time_stretch, num_windows, Hs, out_L, out_data_bytes, p_r2c, p_c2r);
+
         // Playback PERIOD_FRAMES
         snd_pcm_sframes_t sent = 0;
         while (sent < PERIOD_FRAMES)
         {
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
-                buffer + sent * CHANNELS,
+                new_data + sent * CHANNELS,
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {
