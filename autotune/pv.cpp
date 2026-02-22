@@ -1,6 +1,4 @@
 #include "pv.hpp"
-
-#include <fftw3.h>
 #include <math.h>
 
 
@@ -28,7 +26,7 @@ void settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **ome
                     float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase, 
                     fftwf_complex **X, fftwf_complex **Y, 
                     float time_stretch, int* num_windows, int* Hs, 
-                    int* out_L, uint32_t out_data_16_bits, fftwf_plan* p_r2c, fftwf_plan* p_c2r)
+                    int* out_L, fftwf_plan* p_r2c, fftwf_plan* p_c2r)
 
 {
 
@@ -89,7 +87,7 @@ void settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **ome
         omega[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
     }
 
-    *new_data = (uint16_t*)malloc(out_data_16_bits);
+    *new_data = (uint16_t*)malloc(out_L);
     if (!*new_data) {
         free(*omega);
         free(*prev_phase); free(*sum_phase);
@@ -108,7 +106,7 @@ void settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **ome
 
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
                   float *out, float *norm, int16_t *new_data, float* prev_phase,float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                  float time_stretch, int num_windows, int Hs, int out_L, uint32_t out_data_bytes, fftwf_plan p_r2c, fftwf_plan p_c2r) {
+                  float time_stretch, int num_windows, int Hs, int out_L, fftwf_plan p_r2c, fftwf_plan p_c2r) {
 
     // --------------------------
     // Perform PhaseVo Algorithm on each channel

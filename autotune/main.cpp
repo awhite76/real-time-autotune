@@ -191,10 +191,10 @@ int main(int argc, char **argv)
     float *time_buf; float *win; float *ifft_buf; float *omega; float *out;
     float *norm; uint8_t *new_data; float *prev_phase; float *sum_phase;
     fftwf_complex *X; fftwf_complex *Y; float time_stretch = 2.00; int num_windows;
-    int Hs; int out_L; uint32_t out_data_16_bits; fftwf_plan p_r2c; fftwf_plan p_c2r;
+    int Hs; int out_L; fftwf_plan p_r2c; fftwf_plan p_c2r;
 
     settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase, 
-                    &X, &Y, time_stretch, &num_windows, &Hs, &out_L, out_data_16_bits, &p_r2c, &p_c2r);
+                    &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
 
     while (true)
     {
