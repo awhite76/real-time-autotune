@@ -184,7 +184,7 @@ int main(int argc, char **argv)
         }
     }
 
-    cerr << "Looping " << T_MS << "ms chunks: "
+    cout << "Looping " << T_MS << "ms chunks: "
          << PERIOD_FRAMES << " frames @ " << SAMPLE_RATE << " Hz, "
          << CHANNELS << " ch\n"
          << "Capture: " << cap_dev << "  Playback: " << pb_dev << "\n";
@@ -235,6 +235,8 @@ int main(int argc, char **argv)
         sent = 0;
         while (sent < PERIOD_FRAMES)
         {
+
+            cout >> "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
                 buffer + sent * CHANNELS,
