@@ -53,6 +53,8 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     if (!(*win)) return -1;
     hann_window(*win, WINDOW_SIZE);
 
+    cout << "Checkpoint 2.1\n";
+
     *p_r2c = fftwf_plan_dft_r2c_1d(WINDOW_SIZE, *time_buf, *X, FFTW_MEASURE);
     *p_c2r = fftwf_plan_dft_c2r_1d(WINDOW_SIZE, *Y, *ifft_buf, FFTW_MEASURE);
     if (!(*p_r2c) || !(*p_c2r)) {
