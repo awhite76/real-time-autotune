@@ -30,7 +30,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
 {
 
-    cout << "Checkpoint 1\n";
+    cerr << "Checkpoint 1\n";
 
     *time_buf = (float*) fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
     *ifft_buf = (float*) fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
@@ -44,7 +44,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    cout << "Checkpoint 2\n";
+    cerr << "Checkpoint 2\n";
 
     *Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
     *num_windows = 1 + (int)ceilf((float)(NUM_FRAMES - WINDOW_SIZE) / (float)ANALYSIS_HOP);
@@ -53,22 +53,22 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     if (!(*win)) return -1;
     hann_window(*win, WINDOW_SIZE);
 
-    cout << "Checkpoint 2.1\n";
+    cerr << "Checkpoint 2.1\n";
 
     *p_r2c = fftwf_plan_dft_r2c_1d(WINDOW_SIZE, *time_buf, *X, FFTW_MEASURE);
 
-    cout << "Checkpoint 2.2\n";
+    cerr << "Checkpoint 2.2\n";
     *p_c2r = fftwf_plan_dft_c2r_1d(WINDOW_SIZE, *Y, *ifft_buf, FFTW_MEASURE);
 
-    cout << "Checkpoint 2.3\n";
+    cerr << "Checkpoint 2.3\n";
     if (!(*p_r2c) || !(*p_c2r)) {
-        cout << "Checkpoint 2.3.1\n";
+        cerr << "Checkpoint 2.3.1\n";
         if (*p_r2c) fftwf_destroy_plan(*p_r2c);
         if (*p_c2r) fftwf_destroy_plan(*p_c2r);
         return -1;
     }
 
-    cout << "Checkpoint 3\n";
+    cerr << "Checkpoint 3\n";
 
     *out = (float*)calloc((size_t)(*out_L) * (size_t)CHANNELS, sizeof(float));
     *norm = (float*)calloc((size_t)(*out_L), sizeof(float)); // same for all channels
@@ -77,7 +77,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    cout << "Checkpoint 4\n";
+    cerr << "Checkpoint 4\n";
 
     *prev_phase = (float*)calloc((size_t)NUM_CHANNELS * (size_t)FREQ_BINS, sizeof(float));
     *sum_phase  = (float*)calloc((size_t)NUM_CHANNELS * (size_t)FREQ_BINS, sizeof(float));
@@ -90,7 +90,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     }
 
 
-    cout << "Checkpoint 5\n";
+    cerr << "Checkpoint 5\n";
 
     *omega = (float*)malloc(sizeof(float) * (size_t)FREQ_BINS);
     if (!(*omega)) {
@@ -101,13 +101,13 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    cout << "Checkpoint 6\n";
+    cerr << "Checkpoint 6\n";
 
     for (int k = 0; k < FREQ_BINS; k++) {
         (*omega)[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
     }
 
-    cout << "Checkpoint 7\n";
+    cerr << "Checkpoint 7\n";
 
     *new_data = (int16_t*)malloc((*out_L)*sizeof(int16_t));
     if (!*new_data) {
@@ -119,7 +119,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    cout << "Checkpoint 8\n";
+    cerr << "Checkpoint 8\n";
 
     return 0;
 }
