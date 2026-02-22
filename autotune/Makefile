@@ -5,7 +5,7 @@ SRCS     := main.cpp pv.cpp pitch.cpp time_stretch.cpp
 OBJS     := $(SRCS:.cpp=.o)
 
 CXXFLAGS ?= -O2 -std=c++17 -Wall -Wextra -Wpedantic
-LDLIBS   ?= -lasound -lfftw3f -lm
+LDLIBS   ?= -lasound -lfftw3f -lm -lspeexdsp
 
 .PHONY: all clean
 
