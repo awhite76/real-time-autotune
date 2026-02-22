@@ -56,8 +56,13 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     cout << "Checkpoint 2.1\n";
 
     *p_r2c = fftwf_plan_dft_r2c_1d(WINDOW_SIZE, *time_buf, *X, FFTW_MEASURE);
+
+    cout << "Checkpoint 2.2\n";
     *p_c2r = fftwf_plan_dft_c2r_1d(WINDOW_SIZE, *Y, *ifft_buf, FFTW_MEASURE);
+
+    cout << "Checkpoint 2.3\n";
     if (!(*p_r2c) || !(*p_c2r)) {
+        cout << "Checkpoint 2.3.1\n";
         if (*p_r2c) fftwf_destroy_plan(*p_r2c);
         if (*p_c2r) fftwf_destroy_plan(*p_c2r);
         return -1;
