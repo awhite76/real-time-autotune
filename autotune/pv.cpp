@@ -55,10 +55,10 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
     cerr << "Checkpoint 2.1\n";
 
-    *p_r2c = fftwf_plan_dft_r2c_1d(WINDOW_SIZE, *time_buf, *X, FFTW_MEASURE);
+    *p_r2c = fftwf_plan_dft_r2c_1d(WINDOW_SIZE, *time_buf, *X, FFTW_ESTIMATE);
 
     cerr << "Checkpoint 2.2\n";
-    *p_c2r = fftwf_plan_dft_c2r_1d(WINDOW_SIZE, *Y, *ifft_buf, FFTW_MEASURE);
+    *p_c2r = fftwf_plan_dft_c2r_1d(WINDOW_SIZE, *Y, *ifft_buf, FFTW_ESTIMATE);
 
     cerr << "Checkpoint 2.3\n";
     if (!(*p_r2c) || !(*p_c2r)) {
