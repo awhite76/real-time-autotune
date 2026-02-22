@@ -237,7 +237,7 @@ int main(int argc, char **argv)
         {
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
-                new_data + sent * CHANNELS,
+                buffer + sent * CHANNELS,
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {
