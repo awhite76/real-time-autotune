@@ -30,6 +30,8 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
 {
 
+    cout << "Checkpoint 1\n";
+
     *time_buf = (float*) fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
     *ifft_buf = (float*) fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
     *X = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex) * (size_t)FREQ_BINS);
@@ -41,6 +43,8 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         if (*Y) fftwf_free(*Y);
         return -1;
     }
+
+    cout << "Checkpoint 2\n";
 
     *Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
     *num_windows = 1 + (int)ceilf((float)(NUM_FRAMES - WINDOW_SIZE) / (float)ANALYSIS_HOP);
@@ -57,12 +61,16 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
+    cout << "Checkpoint 3\n";
+
     *out = (float*)calloc((size_t)out_L * (size_t)CHANNELS, sizeof(float));
     *norm = (float*)calloc((size_t)out_L, sizeof(float)); // same for all channels
     if (!(*out) || !(*norm)) {
         free(*out); free(*norm);
         return -1;
     }
+
+    cout << "Checkpoint 4\n";
 
     *prev_phase = (float*)calloc((size_t)NUM_CHANNELS * (size_t)FREQ_BINS, sizeof(float));
     *sum_phase  = (float*)calloc((size_t)NUM_CHANNELS * (size_t)FREQ_BINS, sizeof(float));
@@ -74,6 +82,9 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
+
+    cout << "Checkpoint 5\n";
+
     *omega = (float*)malloc(sizeof(float) * (size_t)FREQ_BINS);
     if (!(*omega)) {
         free(*prev_phase); free(*sum_phase);
@@ -83,9 +94,13 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
+    cout << "Checkpoint 6\n";
+
     for (int k = 0; k < FREQ_BINS; k++) {
         *omega[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
     }
+
+    cout << "Checkpoint 7\n";
 
     *new_data = (int16_t*)malloc((*out_L)*sizeof(int16_t));
     if (!*new_data) {
@@ -96,6 +111,8 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         fftwf_free(*win); fftwf_free(*time_buf); fftwf_free(*ifft_buf); fftwf_free(*X); fftwf_free(*Y);
         return -1;
     }
+
+    cout << "Checkpoint 8\n";
 
     return 0;
 }
