@@ -64,8 +64,8 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    *prev_phase = (float*)calloc((size_t)C * (size_t)FREQ_BINS, sizeof(float));
-    *sum_phase  = (float*)calloc((size_t)C * (size_t)FREQ_BINS, sizeof(float));
+    *prev_phase = (float*)calloc((size_t)NUM_CHANNELS * (size_t)FREQ_BINS, sizeof(float));
+    *sum_phase  = (float*)calloc((size_t)NUM_CHANNELS * (size_t)FREQ_BINS, sizeof(float));
     if (!*prev_phase || !*sum_phase) {
         free(*prev_phase); free(*sum_phase);
         free(*out); free(*norm);
