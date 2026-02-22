@@ -13,5 +13,5 @@
 
 using namespace std;
 
-static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream);
-static int xrun_recover(snd_pcm_t *handle, int err);
+bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream);
+int xrun_recover(snd_pcm_t *handle, int err);
