@@ -96,6 +96,8 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         fftwf_free(*win); fftwf_free(*time_buf); fftwf_free(*ifft_buf); fftwf_free(*X); fftwf_free(*Y);
         return -1;
     }
+
+    return 0;
 }
 
 // void cleanup_vocoder() {
