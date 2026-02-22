@@ -131,65 +131,63 @@ static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 
 int main(int argc, char **argv)
 {
-    { // config
-        string cap_dev = (argc > 1) ? argv[1] : "hw:2,0";
-        string pb_dev = (argc > 2) ? argv[2] : "hw:2,0";
+    // config
+    string cap_dev = (argc > 1) ? argv[1] : "hw:2,0";
+    string pb_dev = (argc > 2) ? argv[2] : "hw:2,0";
 
-        snd_pcm_t *capture_handle = nullptr;
-        snd_pcm_t *playback_handle = nullptr;
+    snd_pcm_t *capture_handle = nullptr;
+    snd_pcm_t *playback_handle = nullptr;
 
-        int err = 0;
+    int err = 0;
 
-        if ((err = snd_pcm_open(&capture_handle, cap_dev.c_str(), SND_PCM_STREAM_CAPTURE, 0)) < 0)
-        {
-            cerr << "snd_pcm_open CAPTURE (" << cap_dev << "): " << snd_strerror(err) << "\n";
-            return 1;
-        }
-        if ((err = snd_pcm_open(&playback_handle, pb_dev.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0)
-        {
-            cerr << "snd_pcm_open PLAYBACK (" << pb_dev << "): " << snd_strerror(err) << "\n";
-            snd_pcm_close(capture_handle);
-            return 1;
-        }
-
-        if (!set_hw_params(capture_handle, SND_PCM_STREAM_CAPTURE) ||
-            !set_hw_params(playback_handle, SND_PCM_STREAM_PLAYBACK))
-        {
-            snd_pcm_close(playback_handle);
-            snd_pcm_close(capture_handle);
-            return 1;
-        }
-
-        if ((err = snd_pcm_prepare(capture_handle)) < 0)
-        {
-            cerr << "prepare capture: " << snd_strerror(err) << "\n";
-            snd_pcm_close(playback_handle);
-            snd_pcm_close(capture_handle);
-            return 1;
-        }
-        if ((err = snd_pcm_prepare(playback_handle)) < 0)
-        {
-            cerr << "prepare playback: " << snd_strerror(err) << "\n";
-            snd_pcm_close(playback_handle);
-            snd_pcm_close(capture_handle);
-            return 1;
-        }
+    if ((err = snd_pcm_open(&capture_handle, cap_dev.c_str(), SND_PCM_STREAM_CAPTURE, 0)) < 0)
+    {
+        cerr << "snd_pcm_open CAPTURE (" << cap_dev << "): " << snd_strerror(err) << "\n";
+        return 1;
+    }
+    if ((err = snd_pcm_open(&playback_handle, pb_dev.c_str(), SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+    {
+        cerr << "snd_pcm_open PLAYBACK (" << pb_dev << "): " << snd_strerror(err) << "\n";
+        snd_pcm_close(capture_handle);
+        return 1;
     }
 
-    { // audio buffers
-        int16_t buffer[BUFFER_FRAMES];
-        memset(buffer, 0, sizeof(buffer));
-
-        // Per-channel mono buffers (PERIOD_FRAMES samples each)
-        int16_t left[PERIOD_FRAMES];
-        int16_t right[PERIOD_FRAMES];
-        memset(left, 0, sizeof(left));
-        memset(right, 0, sizeof(right));
-
-        // Two independent YIN detectors (each holds its own yinBuffer/probability)
-        Yin yinL(PERIOD_FRAMES);
-        Yin yinR(PERIOD_FRAMES);
+    if (!set_hw_params(capture_handle, SND_PCM_STREAM_CAPTURE) ||
+        !set_hw_params(playback_handle, SND_PCM_STREAM_PLAYBACK))
+    {
+        snd_pcm_close(playback_handle);
+        snd_pcm_close(capture_handle);
+        return 1;
     }
+
+    if ((err = snd_pcm_prepare(capture_handle)) < 0)
+    {
+        cerr << "prepare capture: " << snd_strerror(err) << "\n";
+        snd_pcm_close(playback_handle);
+        snd_pcm_close(capture_handle);
+        return 1;
+    }
+    if ((err = snd_pcm_prepare(playback_handle)) < 0)
+    {
+        cerr << "prepare playback: " << snd_strerror(err) << "\n";
+        snd_pcm_close(playback_handle);
+        snd_pcm_close(capture_handle);
+        return 1;
+    }
+
+    // audio buffers
+    int16_t buffer[BUFFER_FRAMES];
+    memset(buffer, 0, sizeof(buffer));
+
+    // Per-channel mono buffers (PERIOD_FRAMES samples each)
+    int16_t left[PERIOD_FRAMES];
+    int16_t right[PERIOD_FRAMES];
+    memset(left, 0, sizeof(left));
+    memset(right, 0, sizeof(right));
+
+    // Two independent YIN detectors (each holds its own yinBuffer/probability)
+    Yin yinL(PERIOD_FRAMES);
+    Yin yinR(PERIOD_FRAMES);
 
     // Prefill playback with 2 periods of silence so it won't underrun while capture blocks
     for (int i = 0; i < 2; i++)
