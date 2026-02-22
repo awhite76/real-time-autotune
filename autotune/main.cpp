@@ -196,7 +196,7 @@ int main(int argc, char **argv)
     fftwf_complex *X; fftwf_complex *Y; int num_windows;
     int Hs; int out_L; fftwf_plan p_r2c; fftwf_plan p_c2r;
 
-    float time_stretch = 2.0f;
+    float time_stretch = 1.0f;
 
     cout << "Prevocoder\n";
 
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
             cout << "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
-                buffer + sent * CHANNELS,
+                new_data + sent * CHANNELS,
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {
