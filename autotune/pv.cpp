@@ -70,8 +70,8 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
     cout << "Checkpoint 3\n";
 
-    *out = (float*)calloc((size_t)out_L * (size_t)CHANNELS, sizeof(float));
-    *norm = (float*)calloc((size_t)out_L, sizeof(float)); // same for all channels
+    *out = (float*)calloc((size_t)(*out_L) * (size_t)CHANNELS, sizeof(float));
+    *norm = (float*)calloc((size_t)(*out_L), sizeof(float)); // same for all channels
     if (!(*out) || !(*norm)) {
         free(*out); free(*norm);
         return -1;
@@ -104,7 +104,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     cout << "Checkpoint 6\n";
 
     for (int k = 0; k < FREQ_BINS; k++) {
-        *omega[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
+        (*omega)[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
     }
 
     cout << "Checkpoint 7\n";
