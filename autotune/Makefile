@@ -1,19 +1,21 @@
 CXX      ?= g++
 TARGET   ?= main
-SRC      ?= main.cpp
+
+SRC      := main.cpp pitch.cpp
+OBJ      := $(SRC:.cpp=.o)
 
 CXXFLAGS ?= -O2 -std=c++17 -Wall -Wextra -Wpedantic
 LDLIBS   ?= -lasound
-
-# CXXFLAGS += $(shell pkg-config --cflags alsa)
-# LDLIBS   += $(shell pkg-config --libs alsa)
 
 .PHONY: all clean
 
 all: $(TARGET)
 
-$(TARGET): $(SRC)
+$(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(OBJ)
