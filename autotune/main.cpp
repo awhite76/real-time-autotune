@@ -1,6 +1,7 @@
 #include "main.hpp"
 #include "pitch.hpp"
 #include "time_stretch.hpp"
+#include "pv.hpp"
 
 static void deinterleave_stereo_i16(const int16_t *interleavedLR,
                                     int16_t *left,
