@@ -237,7 +237,7 @@ int main(int argc, char **argv)
 
         /* Run phase vo */
         memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
-        memset(norm, 0, (size_t)out_L * sizeof(float));s
+        memset(norm, 0, (size_t)out_L * sizeof(float));
         phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, 
                       num_windows, Hs, out_L, p_r2c, p_c2r);
 
