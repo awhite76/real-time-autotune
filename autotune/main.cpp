@@ -236,7 +236,7 @@ int main(int argc, char **argv)
         while (sent < PERIOD_FRAMES)
         {
 
-            cout >> "In the writing portion\n";
+            cout << "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
                 buffer + sent * CHANNELS,
