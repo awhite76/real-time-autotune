@@ -277,85 +277,85 @@ int main(int argc, char **argv)
             rcvd += r;
         }
 
-        // Yin pitch detection
-        deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
+        /**************** Yin pitch detection ***************/
+        // deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
-        float f0L = yinL.getPitch(left);
-        float cL = yinL.getProbability();
+        // float f0L = yinL.getPitch(left);
+        // float cL = yinL.getProbability();
 
-        float f0R = yinR.getPitch(right);
-        float cR = yinR.getProbability();
+        // float f0R = yinR.getPitch(right);
+        // float cR = yinR.getProbability();
 
-        float f0Best = (cL >= cR) ? f0L : f0R;
-        float cBest = (cL >= cR) ? cL : cR;
-        const char *chBest = (cL >= cR) ? "L" : "R";
+        // float f0Best = (cL >= cR) ? f0L : f0R;
+        // float cBest = (cL >= cR) ? cL : cR;
+        // const char *chBest = (cL >= cR) ? "L" : "R";
 
-        static int printCountdown = 0;
-        if (++printCountdown >= 10)
-        {
-            printCountdown = 0;
-            if (f0Best > 0.0f)
-                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-            else
-                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        }
-        /* Run phase vo */
-        memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
-        memset(norm, 0, (size_t)out_L * sizeof(float));
-        phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y,
-                      num_windows, Hs, out_L, p_r2c, p_c2r);
-
-        int outFrames = time_stretch_process(
-            rs,
-            new_data,
-            out_L, // frames per channel available in new_data
-            rs_out,
-            PERIOD_FRAMES, // we want exactly one period for ALSA
-            time_stretch); // ratio
-
-        if (outFrames == 0)
-        {
-            cerr << "Speex resample failed\n";
-            // fallback: play something sane
-            memcpy(rs_out, buffer, sizeof(rs_out));
-            outFrames = PERIOD_FRAMES;
-        }
-
-        if (outFrames < PERIOD_FRAMES)
-        {
-            std::memset(rs_out + outFrames * CHANNELS, 0,
-                        (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
-            outFrames = PERIOD_FRAMES;
-        }
-
-        // Playback PERIOD_FRAMES
-        sent = 0;
-        while (sent < PERIOD_FRAMES)
-        {
-
-            cout << "In the writing portion\n";
-            snd_pcm_sframes_t w = snd_pcm_writei(
-                playback_handle,
-                rs_out + sent * CHANNELS,
-                PERIOD_FRAMES - sent);
-            if (w < 0)
-            {
-                w = xrun_recover(playback_handle, (int)w);
-                if (w < 0)
-                {
-                    cerr << "playback recover failed\n";
-                    goto out;
-                }
-                continue;
-            }
-            sent += w;
-        }
+        // static int printCountdown = 0;
+        // if (++printCountdown >= 10)
+        // {
+        //     printCountdown = 0;
+        //     if (f0Best > 0.0f)
+        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+        //     else
+        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
     }
 
-out:
-    snd_pcm_drop(playback_handle);
-    snd_pcm_close(playback_handle);
-    snd_pcm_close(capture_handle);
-    time_stretch_destroy(rs);
-    return 0;
+    /* Run phase vo */
+    memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
+    memset(norm, 0, (size_t)out_L * sizeof(float));
+    phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y,
+                  num_windows, Hs, out_L, p_r2c, p_c2r);
+
+    int outFrames = time_stretch_process(
+        rs,
+        new_data,
+        out_L, // frames per channel available in new_data
+        rs_out,
+        PERIOD_FRAMES, // we want exactly one period for ALSA
+        time_stretch); // ratio
+
+    if (outFrames == 0)
+    {
+        cerr << "Speex resample failed\n";
+        // fallback: play something sane
+        memcpy(rs_out, buffer, sizeof(rs_out));
+        outFrames = PERIOD_FRAMES;
+    }
+
+    if (outFrames < PERIOD_FRAMES)
+    {
+        std::memset(rs_out + outFrames * CHANNELS, 0,
+                    (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
+        outFrames = PERIOD_FRAMES;
+    }
+
+    // Playback PERIOD_FRAMES
+    sent = 0;
+    while (sent < PERIOD_FRAMES)
+    {
+
+        cout << "In the writing portion\n";
+        snd_pcm_sframes_t w = snd_pcm_writei(
+            playback_handle,
+            rs_out + sent * CHANNELS,
+            PERIOD_FRAMES - sent);
+        if (w < 0)
+        {
+            w = xrun_recover(playback_handle, (int)w);
+            if (w < 0)
+            {
+                cerr << "playback recover failed\n";
+                goto out;
+            }
+            continue;
+        }
+        sent += w;
+    }
+}
+
+out : snd_pcm_drop(playback_handle);
+snd_pcm_close(playback_handle);
+snd_pcm_close(capture_handle);
+time_stretch_destroy(rs);
+return 0;
 }
