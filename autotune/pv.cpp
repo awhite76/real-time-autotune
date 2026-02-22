@@ -22,7 +22,7 @@ void hann_window(float *w, int N) {
     }
 }
 
-void settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
+int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
                     float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase, 
                     fftwf_complex **X, fftwf_complex **Y, 
                     float time_stretch, int* num_windows, int* Hs, 
@@ -74,8 +74,8 @@ void settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **ome
         return -1;
     }
 
-    float *omega = (float*)malloc(sizeof(float) * (size_t)FREQ_BINS);
-    if (!omega) {
+    *omega = (float*)malloc(sizeof(float) * (size_t)FREQ_BINS);
+    if (!(*omega)) {
         free(*prev_phase); free(*sum_phase);
         free(*out); free(*norm);
         fftwf_destroy_plan(*p_r2c); fftwf_destroy_plan(*p_c2r);
@@ -87,7 +87,7 @@ void settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **ome
         omega[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
     }
 
-    *new_data = (uint16_t*)malloc(out_L);
+    *new_data = (uint16_t*)malloc((*out_L)*sizeof(int16_t));
     if (!*new_data) {
         free(*omega);
         free(*prev_phase); free(*sum_phase);
