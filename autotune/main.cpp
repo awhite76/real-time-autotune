@@ -207,9 +207,11 @@ int main(int argc, char **argv)
     while (true)
     {
         // Capture PERIOD_FRAMES
+        cout << "In the reading portion\n";
         rcvd = 0;
         while (rcvd < PERIOD_FRAMES)
         {
+
             snd_pcm_sframes_t r = snd_pcm_readi(
                 capture_handle,
                 buffer + rcvd * CHANNELS,
