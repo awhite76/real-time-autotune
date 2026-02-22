@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include "pitch.hpp"
+#include "time_stretch.hpp"
 
 static void deinterleave_stereo_i16(const int16_t *interleavedLR,
                                     int16_t *left,
@@ -175,7 +176,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // audio buffers
+    /****************** audio buffers *****************/
     int16_t buffer[BUFFER_FRAMES];
     memset(buffer, 0, sizeof(buffer));
 
@@ -188,6 +189,10 @@ int main(int argc, char **argv)
     // Two independent YIN detectors (each holds its own yinBuffer/probability)
     Yin yinL(PERIOD_FRAMES);
     Yin yinR(PERIOD_FRAMES);
+
+    /************* Time stretch config *************/
+    TimeStretchResampler rs;
+    time_stretch_init(rs, SAMPLE_RATE, 5);
 
     // Prefill playback with 2 periods of silence so it won't underrun while capture blocks
     for (int i = 0; i < 2; i++)
@@ -256,6 +261,11 @@ int main(int argc, char **argv)
                 cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         }
 
+        int err = time_stretch_process(rs, newData, PERIOD_FRAMES * time_stretch, buffer, PERIOD_FRAMES, time_stretch);
+
+        if (err)
+            cerr << "Time stretch failed\n";
+
         // Playback PERIOD_FRAMES
         snd_pcm_sframes_t sent = 0;
         while (sent < PERIOD_FRAMES)
@@ -282,5 +292,6 @@ out:
     snd_pcm_drop(playback_handle);
     snd_pcm_close(playback_handle);
     snd_pcm_close(capture_handle);
+    time_stretch_destroy(rs);
     return 0;
 }

@@ -1,7 +1,7 @@
 CXX      ?= g++
 TARGET   ?= main
 
-SRC      := main.cpp pitch.cpp
+SRC      := main.cpp pitch.cpp time_stretch.cpp
 OBJ      := $(SRC:.cpp=.o)
 
 CXXFLAGS ?= -O2 -std=c++17 -Wall -Wextra -Wpedantic
