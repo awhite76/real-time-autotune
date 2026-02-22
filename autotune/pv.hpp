@@ -2,6 +2,7 @@
 #define PV_H
 
 #include "main.hpp"
+#include <fftw3.h>
 
 /* Functions to support phase vocoder implementation */
 
