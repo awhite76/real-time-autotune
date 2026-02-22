@@ -14,7 +14,7 @@ static void deinterleave_stereo_i16(const int16_t *interleavedLR,
     }
 }
 
-static int xrun_recover(snd_pcm_t *handle, int err)
+int xrun_recover(snd_pcm_t *handle, int err)
 {
     if (err == -EPIPE)
     { // XRUN
@@ -36,7 +36,7 @@ static int xrun_recover(snd_pcm_t *handle, int err)
     return err;
 }
 
-static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
+bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 {
     snd_pcm_hw_params_t *hw = nullptr;
     snd_pcm_hw_params_alloca(&hw);
@@ -129,10 +129,10 @@ static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 
     return true;
 }
-
 int main(int argc, char **argv)
 {
-    // config
+
+    /* Speaker settup */
     string cap_dev = (argc > 1) ? argv[1] : "hw:2,0";
     string pb_dev = (argc > 2) ? argv[2] : "hw:2,0";
 
@@ -204,23 +204,49 @@ int main(int argc, char **argv)
             if (w < 0)
             {
                 cerr << "initial playback prefill failed: " << snd_strerror((int)w) << "\n";
-                goto out;
+                snd_pcm_drop(playback_handle);
+                snd_pcm_close(playback_handle);
+                snd_pcm_close(capture_handle);
+                return 0;
             }
             i--; // retry this period after recover
         }
     }
 
-    cerr << "Looping " << T_MS << "ms chunks: "
+    cout << "Looping " << T_MS << "ms chunks: "
          << PERIOD_FRAMES << " frames @ " << SAMPLE_RATE << " Hz, "
          << CHANNELS << " ch\n"
          << "Capture: " << cap_dev << "  Playback: " << pb_dev << "\n";
 
+    /* Phase Vo settup */
+
+    float *time_buf; float *win; float *ifft_buf; float *omega; float *out;
+    float *norm; int16_t *new_data; float *prev_phase; float *sum_phase;
+    fftwf_complex *X; fftwf_complex *Y; int num_windows;
+    int Hs; int out_L; fftwf_plan p_r2c; fftwf_plan p_c2r;
+
+    float time_stretch = 3.0f;
+
+    cout << "Prevocoder\n";
+
+    int vor = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase, 
+                            &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
+
+    printf("Vocoder settup: %d\n", vor);
+
+    cout << "Post Vocoder\n";
+
+    snd_pcm_sframes_t sent = 0;
+    snd_pcm_sframes_t rcvd = 0;
+
     while (true)
     {
         // Capture PERIOD_FRAMES
-        snd_pcm_sframes_t rcvd = 0;
+        rcvd = 0;
         while (rcvd < PERIOD_FRAMES)
         {
+            cout << "In the reading portion\n";
+
             snd_pcm_sframes_t r = snd_pcm_readi(
                 capture_handle,
                 buffer + rcvd * CHANNELS,
@@ -265,14 +291,21 @@ int main(int argc, char **argv)
 
         if (err)
             cerr << "Time stretch failed\n";
+        /* Run phase vo */
+        memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
+        memset(norm, 0, (size_t)out_L * sizeof(float));
+        phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, 
+                      num_windows, Hs, out_L, p_r2c, p_c2r);
 
         // Playback PERIOD_FRAMES
-        snd_pcm_sframes_t sent = 0;
+        sent = 0;
         while (sent < PERIOD_FRAMES)
         {
+
+            cout << "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
-                buffer + sent * CHANNELS,
+                new_data + sent * CHANNELS,
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {

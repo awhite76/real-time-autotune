@@ -1,21 +1,21 @@
 CXX      ?= g++
 TARGET   ?= main
 
-SRC      := main.cpp pitch.cpp time_stretch.cpp
-OBJ      := $(SRC:.cpp=.o)
+SRCS     := main.cpp pv.cpp pitch.cpp time_stretch.cpp
+OBJS     := $(SRCS:.cpp=.o)
 
 CXXFLAGS ?= -O2 -std=c++17 -Wall -Wextra -Wpedantic
-LDLIBS   ?= -lasound
+LDLIBS   ?= -lasound -lfftw3f -lm
 
 .PHONY: all clean
 
 all: $(TARGET)
 
-$(TARGET): $(OBJ)
+$(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET) $(OBJ)
+	rm -f $(TARGET) $(OBJS)
