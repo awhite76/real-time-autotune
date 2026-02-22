@@ -175,7 +175,10 @@ int main(int argc, char **argv)
             if (w < 0)
             {
                 cerr << "initial playback prefill failed: " << snd_strerror((int)w) << "\n";
-                goto out;
+                snd_pcm_drop(playback_handle);
+                snd_pcm_close(playback_handle);
+                snd_pcm_close(capture_handle);
+                return 0;
             }
             i--; // retry this period after recover
         }
