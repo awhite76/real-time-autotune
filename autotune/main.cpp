@@ -288,7 +288,7 @@ int main(int argc, char **argv)
                 cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         }
 
-        int err = time_stretch_process(rs, newData, PERIOD_FRAMES * time_stretch, buffer, PERIOD_FRAMES, time_stretch);
+        int err = time_stretch_process(rs, new_data, PERIOD_FRAMES * time_stretch, buffer, PERIOD_FRAMES, time_stretch);
 
         if (err)
             cerr << "Time stretch failed\n";
