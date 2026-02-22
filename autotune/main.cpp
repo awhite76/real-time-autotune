@@ -223,7 +223,7 @@ int main(int argc, char **argv)
 
         /* Run phase vo */
         phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, 
-                      time_stretch, num_windows, Hs, out_L, out_data_bytes, p_r2c, p_c2r);
+                      time_stretch, num_windows, Hs, out_L, p_r2c, p_c2r);
 
         // Playback PERIOD_FRAMES
         snd_pcm_sframes_t sent = 0;
