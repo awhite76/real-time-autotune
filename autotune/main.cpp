@@ -194,6 +194,7 @@ int main(int argc, char **argv)
     /************* Time stretch config *************/
     TimeStretchResampler rs;
     time_stretch_init(rs, SAMPLE_RATE, 5);
+    static int16_t rs_out[BUFFER_FRAMES];
 
     // Prefill playback with 2 periods of silence so it won't underrun while capture blocks
     for (int i = 0; i < 2; i++)
@@ -221,17 +222,29 @@ int main(int argc, char **argv)
 
     /* Phase Vo settup */
 
-    float *time_buf; float *win; float *ifft_buf; float *omega; float *out;
-    float *norm; int16_t *new_data; float *prev_phase; float *sum_phase;
-    fftwf_complex *X; fftwf_complex *Y; int num_windows;
-    int Hs; int out_L; fftwf_plan p_r2c; fftwf_plan p_c2r;
+    float *time_buf;
+    float *win;
+    float *ifft_buf;
+    float *omega;
+    float *out;
+    float *norm;
+    int16_t *new_data;
+    float *prev_phase;
+    float *sum_phase;
+    fftwf_complex *X;
+    fftwf_complex *Y;
+    int num_windows;
+    int Hs;
+    int out_L;
+    fftwf_plan p_r2c;
+    fftwf_plan p_c2r;
 
     float time_stretch = 3.0f;
 
     cout << "Prevocoder\n";
 
-    int vor = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase, 
-                            &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
+    int vor = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase,
+                             &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
 
     printf("Vocoder settup: %d\n", vor);
 
@@ -287,16 +300,34 @@ int main(int argc, char **argv)
             else
                 cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         }
-
-        int err = time_stretch_process(rs, new_data, PERIOD_FRAMES * time_stretch, buffer, PERIOD_FRAMES, time_stretch);
-
-        if (err)
-            cerr << "Time stretch failed\n";
         /* Run phase vo */
         memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
         memset(norm, 0, (size_t)out_L * sizeof(float));
-        phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, 
+        phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y,
                       num_windows, Hs, out_L, p_r2c, p_c2r);
+
+        int outFrames = time_stretch_process(
+            rs,
+            new_data,
+            out_L, // frames per channel available in new_data
+            rs_out,
+            PERIOD_FRAMES, // we want exactly one period for ALSA
+            time_stretch); // ratio
+
+        if (outFrames == 0)
+        {
+            cerr << "Speex resample failed\n";
+            // fallback: play something sane
+            memcpy(rs_out, buffer, sizeof(rs_out));
+            outFrames = PERIOD_FRAMES;
+        }
+
+        if (outFrames < PERIOD_FRAMES)
+        {
+            std::memset(rs_out + outFrames * CHANNELS, 0,
+                        (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
+            outFrames = PERIOD_FRAMES;
+        }
 
         // Playback PERIOD_FRAMES
         sent = 0;
@@ -306,7 +337,7 @@ int main(int argc, char **argv)
             cout << "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
-                new_data + sent * CHANNELS,
+                rs_out + sent * CHANNELS,
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {
