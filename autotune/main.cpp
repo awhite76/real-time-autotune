@@ -201,7 +201,7 @@ int main(int argc, char **argv)
     cout << "Prevocoder\n";
 
     int vor = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase, 
-                    &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
+                            &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
 
     printf("Vocoder settup: %d\n", vor);
 
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
             cout << "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
-                new_data + sent * CHANNELS,
+                buffer + sent * CHANNELS,
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {
