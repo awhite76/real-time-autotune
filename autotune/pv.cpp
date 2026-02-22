@@ -70,7 +70,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
     cerr << "Checkpoint 3\n";
 
-    *out = (float*)calloc((size_t)(*out_L) * (size_t)CHANNELS, sizeof(float));
+    *out = (float*)calloc((size_t)(*out_L) * (size_t)NUM_CHANNELS, sizeof(float));
     *norm = (float*)calloc((size_t)(*out_L), sizeof(float)); // same for all channels
     if (!(*out) || !(*norm)) {
         free(*out); free(*norm);
@@ -109,7 +109,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
     cerr << "Checkpoint 7\n";
 
-    *new_data = (int16_t*)malloc((*out_L)*sizeof(int16_t));
+    *new_data = (int16_t*)malloc((*out_L) * NUM_CHANNELS * sizeof(int16_t));
     if (!*new_data) {
         free(*omega);
         free(*prev_phase); free(*sum_phase);
@@ -133,6 +133,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
                   float *out, float *norm, int16_t *new_data, float* prev_phase, float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
                   int num_windows, int Hs, int out_L, fftwf_plan p_r2c, fftwf_plan p_c2r) {
+
 
     // --------------------------
     // Perform PhaseVo Algorithm on each channel
