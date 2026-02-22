@@ -247,7 +247,7 @@ int main(int argc, char **argv)
             cout << "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
-                buffer + sent * CHANNELS,
+                new_data + sent * CHANNELS,
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {
