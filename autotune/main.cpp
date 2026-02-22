@@ -239,7 +239,8 @@ int main(int argc, char **argv)
     fftwf_plan p_r2c;
     fftwf_plan p_c2r;
 
-    float time_stretch = 3.0f;
+    // 0.84 to 1.19 ~ +-3 semitones
+    float time_stretch = 1.1f;
 
     cout << "Prevocoder\n";
 
@@ -278,28 +279,29 @@ int main(int argc, char **argv)
             rcvd += r;
         }
 
-        // Yin pitch detection
-        deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
+        /**************** Yin pitch detection ***************/
+        // deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
-        float f0L = yinL.getPitch(left);
-        float cL = yinL.getProbability();
+        // float f0L = yinL.getPitch(left);
+        // float cL = yinL.getProbability();
 
-        float f0R = yinR.getPitch(right);
-        float cR = yinR.getProbability();
+        // float f0R = yinR.getPitch(right);
+        // float cR = yinR.getProbability();
 
-        float f0Best = (cL >= cR) ? f0L : f0R;
-        float cBest = (cL >= cR) ? cL : cR;
-        const char *chBest = (cL >= cR) ? "L" : "R";
+        // float f0Best = (cL >= cR) ? f0L : f0R;
+        // float cBest = (cL >= cR) ? cL : cR;
+        // const char *chBest = (cL >= cR) ? "L" : "R";
 
-        static int printCountdown = 0;
-        if (++printCountdown >= 10)
-        {
-            printCountdown = 0;
-            if (f0Best > 0.0f)
-                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-            else
-                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        }
+        // static int printCountdown = 0;
+        // if (++printCountdown >= 10)
+        // {
+        //     printCountdown = 0;
+        //     if (f0Best > 0.0f)
+        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+        //     else
+        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+        // }
+
         /* Run phase vo */
         memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
         memset(norm, 0, (size_t)out_L * sizeof(float));
@@ -327,6 +329,28 @@ int main(int argc, char **argv)
             std::memset(rs_out + outFrames * CHANNELS, 0,
                         (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
             outFrames = PERIOD_FRAMES;
+        }
+
+        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+
+        float f0L = yinL.getPitch(left);
+        float cL = yinL.getProbability();
+
+        float f0R = yinR.getPitch(right);
+        float cR = yinR.getProbability();
+
+        float f0Best = (cL >= cR) ? f0L : f0R;
+        float cBest = (cL >= cR) ? cL : cR;
+        const char *chBest = (cL >= cR) ? "L" : "R";
+
+        static int printCountdown = 0;
+        if (++printCountdown >= 10)
+        {
+            printCountdown = 0;
+            if (f0Best > 0.0f)
+                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+            else
+                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         }
 
         // Playback PERIOD_FRAMES
