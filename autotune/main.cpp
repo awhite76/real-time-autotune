@@ -1,6 +1,6 @@
 #include "main.hpp"
 
-static int xrun_recover(snd_pcm_t *handle, int err)
+int xrun_recover(snd_pcm_t *handle, int err)
 {
     if (err == -EPIPE)
     { // XRUN
@@ -22,7 +22,7 @@ static int xrun_recover(snd_pcm_t *handle, int err)
     return err;
 }
 
-static bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
+bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 {
     snd_pcm_hw_params_t *hw = nullptr;
     snd_pcm_hw_params_alloca(&hw);
