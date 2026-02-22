@@ -198,8 +198,14 @@ int main(int argc, char **argv)
 
     float time_stretch = 2.0f;
 
-    settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase, 
+    cout << "Prevocoder\n";
+
+    int vor = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase, 
                     &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
+
+    printf("Vocoder settup: %d\n", vor);
+
+    cout << "Post Vocoder\n";
 
     snd_pcm_sframes_t sent = 0;
     snd_pcm_sframes_t rcvd = 0;
@@ -207,10 +213,10 @@ int main(int argc, char **argv)
     while (true)
     {
         // Capture PERIOD_FRAMES
-        cout << "In the reading portion\n";
         rcvd = 0;
         while (rcvd < PERIOD_FRAMES)
         {
+            cout << "In the reading portion\n";
 
             snd_pcm_sframes_t r = snd_pcm_readi(
                 capture_handle,
