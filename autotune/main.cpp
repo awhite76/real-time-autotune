@@ -198,10 +198,13 @@ int main(int argc, char **argv)
     settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase, 
                     &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
 
+    snd_pcm_sframes_t sent = 0;
+    snd_pcm_sframes_t rcvd = 0;
+
     while (true)
     {
         // Capture PERIOD_FRAMES
-        snd_pcm_sframes_t rcvd = 0;
+        rcvd = 0;
         while (rcvd < PERIOD_FRAMES)
         {
             snd_pcm_sframes_t r = snd_pcm_readi(
@@ -226,7 +229,7 @@ int main(int argc, char **argv)
                       time_stretch, num_windows, Hs, out_L, p_r2c, p_c2r);
 
         // Playback PERIOD_FRAMES
-        snd_pcm_sframes_t sent = 0;
+        sent = 0;
         while (sent < PERIOD_FRAMES)
         {
             snd_pcm_sframes_t w = snd_pcm_writei(
