@@ -1,4 +1,18 @@
 #include "main.hpp"
+#include "pitch.hpp"
+#include "time_stretch.hpp"
+
+static void deinterleave_stereo_i16(const int16_t *interleavedLR,
+                                    int16_t *left,
+                                    int16_t *right,
+                                    int frames)
+{
+    for (int i = 0; i < frames; ++i)
+    {
+        left[i] = interleavedLR[2 * i + 0];
+        right[i] = interleavedLR[2 * i + 1];
+    }
+}
 
 int xrun_recover(snd_pcm_t *handle, int err)
 {
@@ -162,8 +176,23 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int16_t buffer[PERIOD_FRAMES * CHANNELS];
+    /****************** audio buffers *****************/
+    int16_t buffer[BUFFER_FRAMES];
     memset(buffer, 0, sizeof(buffer));
+
+    // Per-channel mono buffers (PERIOD_FRAMES samples each)
+    int16_t left[PERIOD_FRAMES];
+    int16_t right[PERIOD_FRAMES];
+    memset(left, 0, sizeof(left));
+    memset(right, 0, sizeof(right));
+
+    // Two independent YIN detectors (each holds its own yinBuffer/probability)
+    Yin yinL(PERIOD_FRAMES);
+    Yin yinR(PERIOD_FRAMES);
+
+    /************* Time stretch config *************/
+    TimeStretchResampler rs;
+    time_stretch_init(rs, SAMPLE_RATE, 5);
 
     // Prefill playback with 2 periods of silence so it won't underrun while capture blocks
     for (int i = 0; i < 2; i++)
@@ -235,6 +264,33 @@ int main(int argc, char **argv)
             rcvd += r;
         }
 
+        // Yin pitch detection
+        deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
+
+        float f0L = yinL.getPitch(left);
+        float cL = yinL.getProbability();
+
+        float f0R = yinR.getPitch(right);
+        float cR = yinR.getProbability();
+
+        float f0Best = (cL >= cR) ? f0L : f0R;
+        float cBest = (cL >= cR) ? cL : cR;
+        const char *chBest = (cL >= cR) ? "L" : "R";
+
+        static int printCountdown = 0;
+        if (++printCountdown >= 10)
+        {
+            printCountdown = 0;
+            if (f0Best > 0.0f)
+                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+            else
+                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+        }
+
+        int err = time_stretch_process(rs, newData, PERIOD_FRAMES * time_stretch, buffer, PERIOD_FRAMES, time_stretch);
+
+        if (err)
+            cerr << "Time stretch failed\n";
         /* Run phase vo */
         memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
         memset(norm, 0, (size_t)out_L * sizeof(float));
@@ -269,5 +325,6 @@ out:
     snd_pcm_drop(playback_handle);
     snd_pcm_close(playback_handle);
     snd_pcm_close(capture_handle);
+    time_stretch_destroy(rs);
     return 0;
 }

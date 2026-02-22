@@ -3,13 +3,13 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
-#include "pv.hpp"
+// #include "pv.hpp"
 
 #define T_MS 20
 #define SAMPLE_RATE 48000
 #define CHANNELS 2
 #define PERIOD_FRAMES (SAMPLE_RATE * T_MS / 1000)
-#define BUFFER_FRAMES (PERIOD_FRAMES * 2) // SHOULD THIS BE PERIOD_FRAMES*CHANNELS ??
+#define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS)
 
 using namespace std;
 
