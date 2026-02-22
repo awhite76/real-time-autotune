@@ -84,10 +84,10 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     }
 
     for (int k = 0; k < FREQ_BINS; k++) {
-        omega[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
+        *omega[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
     }
 
-    *new_data = (uint16_t*)malloc((*out_L)*sizeof(int16_t));
+    *new_data = (int16_t*)malloc((*out_L)*sizeof(int16_t));
     if (!*new_data) {
         free(*omega);
         free(*prev_phase); free(*sum_phase);
