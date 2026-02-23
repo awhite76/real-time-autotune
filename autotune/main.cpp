@@ -240,7 +240,7 @@ int main(int argc, char **argv)
     fftwf_plan p_c2r;
 
     // 0.84 to 1.19 ~ +-3 semitones
-    float time_stretch = 1.1f;
+    float time_stretch = 0.85f;
 
     cout << "Prevocoder\n";
 

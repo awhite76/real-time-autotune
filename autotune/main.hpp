@@ -4,11 +4,11 @@
 #include <cstring>
 #include <string>
 
-#define T_MS 20
+#define T_MS 10
 #define SAMPLE_RATE 48000
 #define CHANNELS 2
 #define PERIOD_FRAMES (SAMPLE_RATE * T_MS / 1000)
-#define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS)
+#define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS * 2)
 
 using namespace std;
 
