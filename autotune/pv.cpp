@@ -47,7 +47,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     cerr << "Checkpoint 2\n";
 
     *Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
-    *num_windows = 1 + (int)ceilf((float)(NUM_FRAMES - WINDOW_SIZE) / (float)ANALYSIS_HOP);
+    *num_windows = 1 + (int)ceilf((float)((NUM_FRAMES/2) - WINDOW_SIZE) / (float)ANALYSIS_HOP);
     *out_L = (*num_windows - 1) * (*Hs) + WINDOW_SIZE; 
     *win = (float*)fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
     if (!(*win)) return -1;
