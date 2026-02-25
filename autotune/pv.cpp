@@ -15,7 +15,6 @@ float fast_atan2f(float y, float x) {
 
 void hann_window(float *w, int N) {
     // periodic Hann: w[n] = 0.5 - 0.5*cos(2*pi*n/N)
-    // (good for overlap-add with H=N/4 or H=N/2 depending)
     const float two_pi = 2.0f * (float)M_PI;
     for (int n = 0; n < N; n++) {
         w[n] = 0.5f - 0.5f * cosf(two_pi * (float)n / (float)N);
@@ -30,8 +29,6 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
 {
 
-    cerr << "Checkpoint 1\n";
-
     *time_buf = (float*) fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
     *ifft_buf = (float*) fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
     *X = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex) * (size_t)FREQ_BINS);
@@ -44,8 +41,6 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    cerr << "Checkpoint 2\n";
-
     *Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
     *num_windows = 1 + (int)ceilf((float)((NUM_FRAMES) - WINDOW_SIZE) / (float)ANALYSIS_HOP);
     *out_L = (*num_windows - 1) * (*Hs) + WINDOW_SIZE; 
@@ -53,22 +48,15 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     if (!(*win)) return -1;
     hann_window(*win, WINDOW_SIZE);
 
-    cerr << "Checkpoint 2.1\n";
-
     *p_r2c = fftwf_plan_dft_r2c_1d(WINDOW_SIZE, *time_buf, *X, FFTW_ESTIMATE);
 
-    cerr << "Checkpoint 2.2\n";
     *p_c2r = fftwf_plan_dft_c2r_1d(WINDOW_SIZE, *Y, *ifft_buf, FFTW_ESTIMATE);
 
-    cerr << "Checkpoint 2.3\n";
     if (!(*p_r2c) || !(*p_c2r)) {
-        cerr << "Checkpoint 2.3.1\n";
         if (*p_r2c) fftwf_destroy_plan(*p_r2c);
         if (*p_c2r) fftwf_destroy_plan(*p_c2r);
         return -1;
     }
-
-    cerr << "Checkpoint 3\n";
 
     *out = (float*)calloc((size_t)(*out_L) * (size_t)CHANNELS, sizeof(float));
     *norm = (float*)calloc((size_t)(*out_L), sizeof(float)); // same for all channels
@@ -77,7 +65,10 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    cerr << "Checkpoint 4\n";
+    // Calculate normalization buffer for IFFT
+    for(int n = 0; n < WINDOW_SIZE; n++) {
+        norm[n] = win[n]*win[n];    
+    }
 
     *prev_phase = (float*)calloc((size_t)CHANNELS * (size_t)FREQ_BINS, sizeof(float));
     *sum_phase  = (float*)calloc((size_t)CHANNELS * (size_t)FREQ_BINS, sizeof(float));
@@ -89,9 +80,6 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-
-    cerr << "Checkpoint 5\n";
-
     *omega = (float*)malloc(sizeof(float) * (size_t)FREQ_BINS);
     if (!(*omega)) {
         free(*prev_phase); free(*sum_phase);
@@ -101,13 +89,9 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    cerr << "Checkpoint 6\n";
-
     for (int k = 0; k < FREQ_BINS; k++) {
         (*omega)[k] = 2.0f * (float)M_PI * (float)k / (float)WINDOW_SIZE; // radians/sample
     }
-
-    cerr << "Checkpoint 7\n";
 
     *new_data = (int16_t*)malloc((*out_L) * CHANNELS * sizeof(int16_t));
     if (!*new_data) {
@@ -118,8 +102,6 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         fftwf_free(*win); fftwf_free(*time_buf); fftwf_free(*ifft_buf); fftwf_free(*X); fftwf_free(*Y);
         return -1;
     }
-
-    cerr << "Checkpoint 8\n";
 
     return 0;
 }
@@ -156,8 +138,12 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
                     // interleaved: frame idx, channel ch
                     int16_t v = pcm[(size_t)idx * CHANNELS + (size_t)ch];
                     s = (float)v / 32768.0f;
+
+                    //SIMD here ?
                 }
                 time_buf[n] = s * win[n];
+
+                //SIMD here ?
             }
 
             fftwf_execute(p_r2c);
@@ -174,6 +160,8 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
                     prev[k] = phase;
                     sum[k]  = phase;
                 } else {
+
+                    // SIMD here ?
                     // phase difference from expected
                     float dphi = phase - prev[k] - omega[k] * (float)ANALYSIS_HOP;
                     dphi = princargf(dphi);
@@ -186,6 +174,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
                     prev[k] = phase;
                 }
 
+                //SIMD here ?
                 Y[k][0] = mag * cosf(sum[k]);
                 Y[k][1] = mag * sinf(sum[k]);
             }
@@ -198,6 +187,8 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
 
             // overlap-add (window again) + norm accumulation once (for ch==0)
             for (int n = 0; n < WINDOW_SIZE; n++) {
+
+                // SIMD here ?
                 int oidx = out_start + n;
                 if (oidx >= out_L) break;
 
@@ -205,17 +196,14 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
                 float wsample = sample * win[n];
 
                 out[(size_t)oidx * (size_t)CHANNELS + (size_t)ch] += wsample;
-
-                if (ch == 0) {
-                    // window-squared normalization for COLA robustness
-                    norm[oidx] += win[n] * win[n];
-                }
             }
         }
     }
 
     // Normalize overlap-add
     for (int n = 0; n < out_L; n++) {
+
+        //SIMD here ?
         float g = norm[n];
         if (g < 1e-12f) g = 1.0f;
         float invg = 1.0f / g;
