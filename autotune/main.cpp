@@ -178,7 +178,7 @@ int main(int argc, char **argv)
     }
 
     /****************** audio buffers *****************/
-    int16_t buffer[BUFFER_FRAMES];
+    int16_t buffer[PERIOD_FRAMES * CHANNELS]; // buffer holds processing segments -- number of samples per channel times channel size
     memset(buffer, 0, sizeof(buffer));
 
     // Per-channel mono buffers (PERIOD_FRAMES samples each)
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
     /************* Time stretch config *************/
     TimeStretchResampler rs;
     time_stretch_init(rs, SAMPLE_RATE, 5);
-    static int16_t rs_out[BUFFER_FRAMES];
+    static int16_t rs_out[PERIOD_FRAMES * CHANNELS];
 
     // Prefill playback with 2 periods of silence so it won't underrun while capture blocks
     for (int i = 0; i < 2; i++)

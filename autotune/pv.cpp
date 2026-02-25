@@ -47,7 +47,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
     cerr << "Checkpoint 2\n";
 
     *Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
-    *num_windows = 1 + (int)ceilf((float)((NUM_FRAMES/2) - WINDOW_SIZE) / (float)ANALYSIS_HOP);
+    *num_windows = 1 + (int)ceilf((float)((NUM_FRAMES) - WINDOW_SIZE) / (float)ANALYSIS_HOP);
     *out_L = (*num_windows - 1) * (*Hs) + WINDOW_SIZE; 
     *win = (float*)fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
     if (!(*win)) return -1;
@@ -70,7 +70,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
     cerr << "Checkpoint 3\n";
 
-    *out = (float*)calloc((size_t)(*out_L) * (size_t)NUM_CHANNELS, sizeof(float));
+    *out = (float*)calloc((size_t)(*out_L) * (size_t)CHANNELS, sizeof(float));
     *norm = (float*)calloc((size_t)(*out_L), sizeof(float)); // same for all channels
     if (!(*out) || !(*norm)) {
         free(*out); free(*norm);
@@ -79,8 +79,8 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
     cerr << "Checkpoint 4\n";
 
-    *prev_phase = (float*)calloc((size_t)NUM_CHANNELS * (size_t)FREQ_BINS, sizeof(float));
-    *sum_phase  = (float*)calloc((size_t)NUM_CHANNELS * (size_t)FREQ_BINS, sizeof(float));
+    *prev_phase = (float*)calloc((size_t)CHANNELS * (size_t)FREQ_BINS, sizeof(float));
+    *sum_phase  = (float*)calloc((size_t)CHANNELS * (size_t)FREQ_BINS, sizeof(float));
     if (!*prev_phase || !*sum_phase) {
         free(*prev_phase); free(*sum_phase);
         free(*out); free(*norm);
@@ -109,7 +109,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
     cerr << "Checkpoint 7\n";
 
-    *new_data = (int16_t*)malloc((*out_L) * NUM_CHANNELS * sizeof(int16_t));
+    *new_data = (int16_t*)malloc((*out_L) * CHANNELS * sizeof(int16_t));
     if (!*new_data) {
         free(*omega);
         free(*prev_phase); free(*sum_phase);
@@ -138,7 +138,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
     // --------------------------
     // Perform PhaseVo Algorithm on each channel
     // --------------------------
-    for (int ch = 0; ch < NUM_CHANNELS; ch++) {
+    for (int ch = 0; ch < CHANNELS; ch++) {
         float *prev = prev_phase + (size_t)ch * FREQ_BINS;
         float *sum  = sum_phase  + (size_t)ch * FREQ_BINS;
 
@@ -154,7 +154,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
                 float s = 0.0f;
                 if (idx < NUM_FRAMES) {
                     // interleaved: frame idx, channel ch
-                    int16_t v = pcm[(size_t)idx * NUM_CHANNELS + (size_t)ch];
+                    int16_t v = pcm[(size_t)idx * CHANNELS + (size_t)ch];
                     s = (float)v / 32768.0f;
                 }
                 time_buf[n] = s * win[n];
@@ -204,7 +204,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
                 float sample = ifft_buf[n] * invN;
                 float wsample = sample * win[n];
 
-                out[(size_t)oidx * (size_t)NUM_CHANNELS + (size_t)ch] += wsample;
+                out[(size_t)oidx * (size_t)CHANNELS + (size_t)ch] += wsample;
 
                 if (ch == 0) {
                     // window-squared normalization for COLA robustness
@@ -219,21 +219,21 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
         float g = norm[n];
         if (g < 1e-12f) g = 1.0f;
         float invg = 1.0f / g;
-        for (int ch = 0; ch < NUM_CHANNELS; ch++) {
-            out[(size_t)n * NUM_CHANNELS + (size_t)ch] *= invg;
+        for (int ch = 0; ch < CHANNELS; ch++) {
+            out[(size_t)n * CHANNELS + (size_t)ch] *= invg;
         }
     }
     
     for (int n = 0; n < out_L; n++) {
-        for (int ch = 0; ch < NUM_CHANNELS; ch++) {
-            float v = out[(size_t)n * NUM_CHANNELS + (size_t)ch];
+        for (int ch = 0; ch < CHANNELS; ch++) {
+            float v = out[(size_t)n * CHANNELS + (size_t)ch];
             // simple clip
             if (v > 1.0f) v = 1.0f;
             if (v < -1.0f) v = -1.0f;
             int32_t q = (int32_t)lroundf(v * 32767.0f);
             if (q > 32767) q = 32767;
             if (q < -32768) q = -32768;
-            new_data[(size_t)n * NUM_CHANNELS + (size_t)ch] = (int16_t)q;
+            new_data[(size_t)n * CHANNELS + (size_t)ch] = (int16_t)q;
         }
     }
 

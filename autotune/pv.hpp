@@ -6,14 +6,9 @@
 
 /* Functions to support phase vocoder implementation */
 
-/* Sampled data info */
-#define NUM_CHANNELS 2
-#define SAMPLING_RATE 48000
-#define FRAME_BYTES 4
-#define NUM_FRAMES BUFFER_FRAMES /* VERIFY THIS */
-
 /* PV Params */
-#define WINDOW_SIZE  480
+#define NUM_FRAMES PERIOD_FRAMES * CHANNELS // TOTAL number of samples per sampling period (PERIOD FRAMES is mono)
+#define WINDOW_SIZE  NUM_FRAMES / 2
 #define ANALYSIS_HOP ((WINDOW_SIZE)/4)
 #define FREQ_BINS (1 + WINDOW_SIZE/2) 
 

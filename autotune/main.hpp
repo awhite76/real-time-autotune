@@ -4,11 +4,15 @@
 #include <cstring>
 #include <string>
 
-#define T_MS 10
+/* Sampling data */
+#define T_MS 20
 #define SAMPLE_RATE 48000
 #define CHANNELS 2
-#define PERIOD_FRAMES (SAMPLE_RATE * T_MS / 1000)
-#define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS * 2)
+#define PERIOD_FRAMES (SAMPLE_RATE * T_MS / 1000) // Period frames represents how many samples per sampling period of one channel
+
+/* DMA engine buffer */
+#define NUM_PERIOD_FRAMES 4 // Number of period frames DMA buffer should hold
+#define BUFFER_FRAMES (PERIOD_FRAMES * NUM_PERIOD_FRAMES) // Buffer frames represents size of DMA ring buffer
 
 using namespace std;
 
