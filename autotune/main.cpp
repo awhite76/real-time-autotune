@@ -2,18 +2,7 @@
 #include "pitch.hpp"
 #include "time_stretch.hpp"
 #include "pv.hpp"
-
-static void deinterleave_stereo_i16(const int16_t *interleavedLR,
-                                    int16_t *left,
-                                    int16_t *right,
-                                    int frames)
-{
-    for (int i = 0; i < frames; ++i)
-    {
-        left[i] = interleavedLR[2 * i + 0];
-        right[i] = interleavedLR[2 * i + 1];
-    }
-}
+#include "util.hpp"
 
 int xrun_recover(snd_pcm_t *handle, int err)
 {
@@ -130,6 +119,71 @@ bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 
     return true;
 }
+
+// Compute frames for a T_MS window
+static inline uint32_t framesForMs(uint32_t sampleRate, float ms)
+{
+    double frames = (double)sampleRate * ((double)ms / 1000.0);
+    uint32_t out = (uint32_t)(frames + 0.5);
+    return max<uint32_t>(out, 1);
+}
+
+PitchSeries buildPitchSeries_Tms(const StereoWavI16 &wav, float T_MS)
+{
+    if (wav.sampleRate == 0)
+        throw runtime_error("Invalid sample rate");
+    if (wav.left.size() != wav.right.size())
+        throw runtime_error("L/R size mismatch");
+    if (wav.left.empty())
+        throw runtime_error("Empty WAV buffers");
+    if (T_MS <= 0.0f)
+        throw runtime_error("T_MS must be > 0");
+
+    PitchSeries ps;
+    ps.sampleRate = wav.sampleRate;
+    ps.windowMs = T_MS;
+    ps.windowFrames = framesForMs(wav.sampleRate, T_MS);
+
+    const uint32_t N = ps.windowFrames;
+    const size_t totalFrames = wav.left.size();
+    const size_t chunks = totalFrames / N;
+
+    ps.leftHz.resize(chunks);
+    ps.rightHz.resize(chunks);
+    ps.leftConf.resize(chunks);
+    ps.rightConf.resize(chunks);
+
+    // Yin detectors sized to the window length
+    Yin yinL((int)N);
+    Yin yinR((int)N);
+
+    // Scratch buffers for each chunk (YIN expects contiguous int16_t*)
+    vector<int16_t> bufL(N);
+    vector<int16_t> bufR(N);
+
+    for (size_t k = 0; k < chunks; ++k)
+    {
+        const size_t offset = k * (size_t)N;
+
+        // copy chunk into contiguous buffers
+        copy_n(wav.left.begin() + offset, N, bufL.begin());
+        copy_n(wav.right.begin() + offset, N, bufR.begin());
+
+        const float f0L = yinL.getPitch(bufL.data());
+        const float cL = yinL.getProbability();
+
+        const float f0R = yinR.getPitch(bufR.data());
+        const float cR = yinR.getProbability();
+
+        ps.leftHz[k] = f0L;
+        ps.leftConf[k] = cL;
+        ps.rightHz[k] = f0R;
+        ps.rightConf[k] = cR;
+    }
+
+    return ps;
+}
+
 int main(int argc, char **argv)
 {
 
@@ -175,6 +229,31 @@ int main(int argc, char **argv)
         snd_pcm_close(playback_handle);
         snd_pcm_close(capture_handle);
         return 1;
+    }
+
+    /****************** Load .wav *********************/
+    StereoWavI16 wav = loadStereoWav_i16("../assets/440Hz.wav");
+
+    // If you want to ensure it matches your pipeline rate:
+    if (wav.sampleRate != SAMPLE_RATE)
+    {
+        cerr << "Warning: input.wav sample rate is " << wav.sampleRate
+             << " but pipeline expects " << SAMPLE_RATE << "\n";
+    }
+
+    // Build pitch time series (per T_MS chunk)
+    PitchSeries pitchTS = buildPitchSeries_Tms(wav, (float)T_MS);
+
+    cerr << "Loaded input.wav: frames=" << wav.left.size()
+         << " windowFrames=" << pitchTS.windowFrames
+         << " chunks=" << pitchTS.size() << "\n";
+
+    // Example quick access:
+    if (pitchTS.size() > 0)
+    {
+        size_t idx = pitchTS.indexForMs(250.0f); // chunk at ~250ms
+        cerr << "Pitch @250ms: L=" << pitchTS.leftHz[idx] << "Hz"
+             << " R=" << pitchTS.rightHz[idx] << "Hz\n";
     }
 
     /****************** audio buffers *****************/
@@ -326,8 +405,8 @@ int main(int argc, char **argv)
 
         if (outFrames < PERIOD_FRAMES)
         {
-            std::memset(rs_out + outFrames * CHANNELS, 0,
-                        (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
+            memset(rs_out + outFrames * CHANNELS, 0,
+                   (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
             outFrames = PERIOD_FRAMES;
         }
 
