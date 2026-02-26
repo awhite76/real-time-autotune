@@ -128,7 +128,7 @@ static inline uint32_t framesForMs(uint32_t sampleRate, float ms)
     return max<uint32_t>(out, 1);
 }
 
-PitchSeries buildPitchSeries_Tms(const StereoWavI16 &wav, float T_MS)
+PitchSeries buildPitchSeries_Tms(const StereoWavI16 &wav, float t_ms)
 {
     if (wav.sampleRate == 0)
         throw runtime_error("Invalid sample rate");
@@ -136,13 +136,13 @@ PitchSeries buildPitchSeries_Tms(const StereoWavI16 &wav, float T_MS)
         throw runtime_error("L/R size mismatch");
     if (wav.left.empty())
         throw runtime_error("Empty WAV buffers");
-    if (T_MS <= 0.0f)
+    if (t_ms <= 0.0f)
         throw runtime_error("T_MS must be > 0");
 
     PitchSeries ps;
     ps.sampleRate = wav.sampleRate;
-    ps.windowMs = T_MS;
-    ps.windowFrames = framesForMs(wav.sampleRate, T_MS);
+    ps.windowMs = t_ms;
+    ps.windowFrames = framesForMs(wav.sampleRate, t_ms);
 
     const uint32_t N = ps.windowFrames;
     const size_t totalFrames = wav.left.size();
@@ -242,7 +242,7 @@ int main(int argc, char **argv)
     }
 
     // Build pitch time series (per T_MS chunk)
-    PitchSeries pitchTS = buildPitchSeries_Tms(wav, (float)T_MS);
+    PitchSeries pitchTS = buildPitchSeries_Tms(wav, (float)1.0f * T_MS);
 
     cerr << "Loaded input.wav: frames=" << wav.left.size()
          << " windowFrames=" << pitchTS.windowFrames

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <algorithm>
 
 #define T_MS 10
 #define SAMPLE_RATE 48000
