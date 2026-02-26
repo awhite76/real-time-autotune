@@ -376,7 +376,8 @@ int main(int argc, char **argv)
         // float time_stretch_L = pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
         // float time_stretch_R = pitchTS.rightHz[file_idx++ % max_file_idx] / f0R;
 
-        time_stretch = pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
+        time_stretch = pitchTS.leftHz[file_idx++ % max_file_idx] < 0 ? 1.0f : pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
+
         if (print_count++ > 50)
         {
             print_count = 0;
