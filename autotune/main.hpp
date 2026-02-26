@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 #include <alsa/asoundlib.h>
 #include <cstdint>
 #include <cstring>

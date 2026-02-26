@@ -336,6 +336,10 @@ int main(int argc, char **argv)
     size_t file_idx = 0;
     size_t max_file_idx = pitchTS.size();
 
+    // Load and config complete -> wait for user input
+    cout << "Setup complete! Press ENTER to continue...\n";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
     while (true)
     {
         // Capture PERIOD_FRAMES
@@ -400,27 +404,27 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+        // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        float f0L = yinL.getPitch(left);
-        float cL = yinL.getProbability();
+        // float f0L = yinL.getPitch(left);
+        // float cL = yinL.getProbability();
 
-        float f0R = yinR.getPitch(right);
-        float cR = yinR.getProbability();
+        // float f0R = yinR.getPitch(right);
+        // float cR = yinR.getProbability();
 
-        float f0Best = (cL >= cR) ? f0L : f0R;
-        float cBest = (cL >= cR) ? cL : cR;
-        const char *chBest = (cL >= cR) ? "L" : "R";
+        // float f0Best = (cL >= cR) ? f0L : f0R;
+        // float cBest = (cL >= cR) ? cL : cR;
+        // const char *chBest = (cL >= cR) ? "L" : "R";
 
-        static int printCountdown = 0;
-        if (++printCountdown >= 10)
-        {
-            printCountdown = 0;
-            if (f0Best > 0.0f)
-                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-            else
-                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        }
+        // static int printCountdown = 0;
+        // if (++printCountdown >= 10)
+        // {
+        //     printCountdown = 0;
+        //     if (f0Best > 0.0f)
+        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+        //     else
+        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+        // }
 
         // Playback PERIOD_FRAMES
         sent = 0;
