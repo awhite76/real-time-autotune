@@ -340,6 +340,7 @@ int main(int argc, char **argv)
     cout << "Setup complete! Press ENTER to continue...\n";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
+    int print_count = 0;
     while (true)
     {
         // Capture PERIOD_FRAMES
@@ -364,16 +365,23 @@ int main(int argc, char **argv)
         }
 
         /**************** Yin pitch detection ***************/
-        // deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
+        deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
-        // float f0L = yinL.getPitch(left);
-        // float cL = yinL.getProbability();
+        float f0L = yinL.getPitch(left);
+        float cL = yinL.getProbability();
 
-        // float f0R = yinR.getPitch(right);
-        // float cR = yinR.getProbability();
+        float f0R = yinR.getPitch(right);
+        float cR = yinR.getProbability();
 
         // float time_stretch_L = pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
         // float time_stretch_R = pitchTS.rightHz[file_idx++ % max_file_idx] / f0R;
+
+        time_stretch = pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
+        if (print_count++ > 50)
+        {
+            print_count = 0;
+            cout << "Input pitch: " << f0L << "\nFile pitch: " << pitchTS.leftHz[file_idx++ % max_file_idx] << "\nTime stretch: " << time_stretch << endl;
+        }
 
         /* Run phase vo */
         memset(out, 0, (size_t)max_out_L * NUM_CHANNELS * sizeof(float));
