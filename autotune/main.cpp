@@ -307,7 +307,7 @@ int main(int argc, char **argv)
 
         int out_L;
         phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, time_stretch, &out_L,
-                      num_windows, Hs, p_r2c, p_c2r);
+                      num_windows, p_r2c, p_c2r);
 
         int outFrames = time_stretch_process(
             rs,

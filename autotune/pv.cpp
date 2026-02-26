@@ -131,14 +131,14 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
                   float *out, float *norm, int16_t *new_data, float* prev_phase, float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                  float time_stretch, int *out_L, int num_windows, int Hs, int out_L, fftwf_plan p_r2c, fftwf_plan p_c2r) {
+                  float time_stretch, int *out_L, int num_windows, fftwf_plan p_r2c, fftwf_plan p_c2r) {
 
     
     if(time_stretch > MAX_TIME_STRETCH) {
         time_stretch = MAX_TIME_STRETCH;
     }
     int Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
-    *out_L = (*num_windows - 1) * (Hs) + WINDOW_SIZE; 
+    *out_L = (num_windows - 1) * (Hs) + WINDOW_SIZE; 
 
     // --------------------------
     // Perform PhaseVo Algorithm on each channel
