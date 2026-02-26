@@ -2,18 +2,7 @@
 #include "pitch.hpp"
 #include "time_stretch.hpp"
 #include "pv.hpp"
-
-static void deinterleave_stereo_i16(const int16_t *interleavedLR,
-                                    int16_t *left,
-                                    int16_t *right,
-                                    int frames)
-{
-    for (int i = 0; i < frames; ++i)
-    {
-        left[i] = interleavedLR[2 * i + 0];
-        right[i] = interleavedLR[2 * i + 1];
-    }
-}
+#include "util.hpp"
 
 int xrun_recover(snd_pcm_t *handle, int err)
 {
@@ -130,6 +119,71 @@ bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
 
     return true;
 }
+
+// Compute frames for a T_MS window
+static inline uint32_t framesForMs(uint32_t sampleRate, float ms)
+{
+    double frames = (double)sampleRate * ((double)ms / 1000.0);
+    uint32_t out = (uint32_t)(frames + 0.5);
+    return max<uint32_t>(out, 1);
+}
+
+PitchSeries buildPitchSeries_Tms(const StereoWavI16 &wav, float t_ms)
+{
+    if (wav.sampleRate == 0)
+        throw runtime_error("Invalid sample rate");
+    if (wav.left.size() != wav.right.size())
+        throw runtime_error("L/R size mismatch");
+    if (wav.left.empty())
+        throw runtime_error("Empty WAV buffers");
+    if (t_ms <= 0.0f)
+        throw runtime_error("T_MS must be > 0");
+
+    PitchSeries ps;
+    ps.sampleRate = wav.sampleRate;
+    ps.windowMs = t_ms;
+    ps.windowFrames = framesForMs(wav.sampleRate, t_ms);
+
+    const uint32_t N = ps.windowFrames;
+    const size_t totalFrames = wav.left.size();
+    const size_t chunks = totalFrames / N;
+
+    ps.leftHz.resize(chunks);
+    ps.rightHz.resize(chunks);
+    ps.leftConf.resize(chunks);
+    ps.rightConf.resize(chunks);
+
+    // Yin detectors sized to the window length
+    Yin yinL((int)N);
+    Yin yinR((int)N);
+
+    // Scratch buffers for each chunk (YIN expects contiguous int16_t*)
+    vector<int16_t> bufL(N);
+    vector<int16_t> bufR(N);
+
+    for (size_t k = 0; k < chunks; ++k)
+    {
+        const size_t offset = k * (size_t)N;
+
+        // copy chunk into contiguous buffers
+        copy_n(wav.left.begin() + offset, N, bufL.begin());
+        copy_n(wav.right.begin() + offset, N, bufR.begin());
+
+        const float f0L = yinL.getPitch(bufL.data());
+        const float cL = yinL.getProbability();
+
+        const float f0R = yinR.getPitch(bufR.data());
+        const float cR = yinR.getProbability();
+
+        ps.leftHz[k] = f0L;
+        ps.leftConf[k] = cL;
+        ps.rightHz[k] = f0R;
+        ps.rightConf[k] = cR;
+    }
+
+    return ps;
+}
+
 int main(int argc, char **argv)
 {
 
@@ -175,6 +229,31 @@ int main(int argc, char **argv)
         snd_pcm_close(playback_handle);
         snd_pcm_close(capture_handle);
         return 1;
+    }
+
+    /****************** Load .wav *********************/
+    StereoWavI16 wav = loadStereoWav_i16("../assets/journey_vocals_stereo.wav");
+
+    // If you want to ensure it matches your pipeline rate:
+    if (wav.sampleRate != SAMPLE_RATE)
+    {
+        cerr << "Warning: input.wav sample rate is " << wav.sampleRate
+             << " but pipeline expects " << SAMPLE_RATE << "\n";
+    }
+
+    // Build pitch time series (per T_MS chunk)
+    PitchSeries pitchTS = buildPitchSeries_Tms(wav, (float)1.0f * T_MS);
+
+    cerr << "Loaded input.wav: frames=" << wav.left.size()
+         << " windowFrames=" << pitchTS.windowFrames
+         << " chunks=" << pitchTS.size() << "\n";
+
+    // Example quick access:
+    if (pitchTS.size() > 0)
+    {
+        size_t idx = pitchTS.indexForMs(250.0f); // chunk at ~250ms
+        cerr << "Pitch @250ms: L=" << pitchTS.leftHz[idx] << "Hz"
+             << " R=" << pitchTS.rightHz[idx] << "Hz\n";
     }
 
     /****************** audio buffers *****************/
@@ -254,13 +333,19 @@ int main(int argc, char **argv)
     snd_pcm_sframes_t sent = 0;
     snd_pcm_sframes_t rcvd = 0;
 
+    size_t file_idx = 0;
+    size_t max_file_idx = pitchTS.size();
+
+    // Load and config complete -> wait for user input
+    cout << "Setup complete! Press ENTER to continue...\n";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
     while (true)
     {
         // Capture PERIOD_FRAMES
         rcvd = 0;
         while (rcvd < PERIOD_FRAMES)
         {
-
             snd_pcm_sframes_t r = snd_pcm_readi(
                 capture_handle,
                 buffer + rcvd * CHANNELS,
@@ -287,19 +372,8 @@ int main(int argc, char **argv)
         // float f0R = yinR.getPitch(right);
         // float cR = yinR.getProbability();
 
-        // float f0Best = (cL >= cR) ? f0L : f0R;
-        // float cBest = (cL >= cR) ? cL : cR;
-        // const char *chBest = (cL >= cR) ? "L" : "R";
-
-        // static int printCountdown = 0;
-        // if (++printCountdown >= 10)
-        // {
-        //     printCountdown = 0;
-        //     if (f0Best > 0.0f)
-        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-        //     else
-        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        // }
+        // float time_stretch_L = pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
+        // float time_stretch_R = pitchTS.rightHz[file_idx++ % max_file_idx] / f0R;
 
         /* Run phase vo */
         memset(out, 0, (size_t)max_out_L * NUM_CHANNELS * sizeof(float));
@@ -327,38 +401,37 @@ int main(int argc, char **argv)
 
         if (outFrames < PERIOD_FRAMES)
         {
-            std::memset(rs_out + outFrames * CHANNELS, 0,
-                        (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
+            memset(rs_out + outFrames * CHANNELS, 0,
+                   (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
             outFrames = PERIOD_FRAMES;
         }
 
-        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+        // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        float f0L = yinL.getPitch(left);
-        float cL = yinL.getProbability();
+        // float f0L = yinL.getPitch(left);
+        // float cL = yinL.getProbability();
 
-        float f0R = yinR.getPitch(right);
-        float cR = yinR.getProbability();
+        // float f0R = yinR.getPitch(right);
+        // float cR = yinR.getProbability();
 
-        float f0Best = (cL >= cR) ? f0L : f0R;
-        float cBest = (cL >= cR) ? cL : cR;
-        const char *chBest = (cL >= cR) ? "L" : "R";
+        // float f0Best = (cL >= cR) ? f0L : f0R;
+        // float cBest = (cL >= cR) ? cL : cR;
+        // const char *chBest = (cL >= cR) ? "L" : "R";
 
-        static int printCountdown = 0;
-        if (++printCountdown >= 10)
-        {
-            printCountdown = 0;
-            if (f0Best > 0.0f)
-                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-            else
-                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        }
+        // static int printCountdown = 0;
+        // if (++printCountdown >= 10)
+        // {
+        //     printCountdown = 0;
+        //     if (f0Best > 0.0f)
+        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+        //     else
+        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+        // }
 
         // Playback PERIOD_FRAMES
         sent = 0;
         while (sent < PERIOD_FRAMES)
         {
-
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
                 rs_out + sent * CHANNELS,
