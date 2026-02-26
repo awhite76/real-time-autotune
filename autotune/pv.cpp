@@ -192,7 +192,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
 
                 // SIMD here ?
                 int oidx = out_start + n;
-                if (oidx >= out_L) break;
+                if (oidx >= *out_L) break;
 
                 float sample = ifft_buf[n] * invN;
                 float wsample = sample * win[n];
@@ -208,7 +208,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
     }
 
     // Normalize overlap-add
-    for (int n = 0; n < out_L; n++) {
+    for (int n = 0; n < *out_L; n++) {
 
         //SIMD here ?
         float g = norm[n];
@@ -219,7 +219,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
         }
     }
     
-    for (int n = 0; n < out_L; n++) {
+    for (int n = 0; n < *out_L; n++) {
         for (int ch = 0; ch < CHANNELS; ch++) {
             float v = out[(size_t)n * CHANNELS + (size_t)ch];
             // simple clip

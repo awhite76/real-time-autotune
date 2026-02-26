@@ -4,7 +4,7 @@ TARGET   ?= main
 SRCS     := main.cpp pv.cpp pitch.cpp time_stretch.cpp
 OBJS     := $(SRCS:.cpp=.o)
 
-CXXFLAGS ?= -O2 -std=c++17 -Wall -Wextra -Wpedantic
+CXXFLAGS ?= -O0 -std=c++17 -Wall -Wextra -Wpedantic -g
 LDLIBS   ?= -lasound -lfftw3f -lm -lspeexdsp
 
 .PHONY: all clean
