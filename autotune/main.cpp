@@ -235,7 +235,7 @@ int main(int argc, char **argv)
     fftwf_complex *Y;
     int num_windows;
     int Hs;
-    int out_L;
+    int max_out_L;
     fftwf_plan p_r2c;
     fftwf_plan p_c2r;
 
@@ -245,7 +245,7 @@ int main(int argc, char **argv)
     cout << "Prevocoder\n";
 
     int vor = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase,
-                             &X, &Y, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
+                             &X, &Y, &num_windows, &Hs, &max_out_L, &p_r2c, &p_c2r);
 
     printf("Vocoder settup: %d\n", vor);
 
@@ -303,9 +303,11 @@ int main(int argc, char **argv)
         // }
 
         /* Run phase vo */
-        memset(out, 0, (size_t)out_L * CHANNELS * sizeof(float));
-        memset(norm, 0, (size_t)out_L * sizeof(float));
-        phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y,
+        memset(out, 0, (size_t)max_out_L * CHANNELS * sizeof(float));
+        memset(norm, 0, (size_t)max_out_L * sizeof(float));
+
+        int out_L;
+        phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, &out_L,
                       num_windows, time_stretch, p_r2c, p_c2r);
 
         int outFrames = time_stretch_process(

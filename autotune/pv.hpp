@@ -31,7 +31,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
                   float *out, float *norm, int16_t *new_data, float* prev_phase, float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                  int num_windows, float time_stretch, fftwf_plan p_r2c, fftwf_plan p_c2r);
+                  int *out_L, int num_windows, float time_stretch, fftwf_plan p_r2c, fftwf_plan p_c2r);
 
 
 
