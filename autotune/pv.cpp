@@ -24,8 +24,7 @@ void hann_window(float *w, int N) {
 
 int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
                     float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase, 
-                    fftwf_complex **X, fftwf_complex **Y, 
-                    float time_stretch, int* num_windows, int* Hs, 
+                    fftwf_complex **X, fftwf_complex **Y, int* num_windows, int* Hs, 
                     int* out_L, fftwf_plan* p_r2c, fftwf_plan* p_c2r)
 
 {
@@ -46,7 +45,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
     cerr << "Checkpoint 2\n";
 
-    *Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
+    *Hs = (int)lroundf(ANALYSIS_HOP * MAX_TIME_STRETCH);
     *num_windows = 1 + (int)ceilf((float)((NUM_FRAMES/2) - WINDOW_SIZE) / (float)ANALYSIS_HOP);
     *out_L = (*num_windows - 1) * (*Hs) + WINDOW_SIZE; 
     *win = (float*)fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
@@ -132,8 +131,14 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
                   float *out, float *norm, int16_t *new_data, float* prev_phase, float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                  int num_windows, int Hs, int out_L, fftwf_plan p_r2c, fftwf_plan p_c2r) {
+                  float time_stretch, int *out_L, int num_windows, fftwf_plan p_r2c, fftwf_plan p_c2r) {
 
+    
+    if(time_stretch > MAX_TIME_STRETCH) {
+        time_stretch = MAX_TIME_STRETCH;
+    }
+    int Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
+    *out_L = (num_windows - 1) * (Hs) + WINDOW_SIZE; 
 
     // --------------------------
     // Perform PhaseVo Algorithm on each channel
@@ -199,7 +204,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
             // overlap-add (window again) + norm accumulation once (for ch==0)
             for (int n = 0; n < WINDOW_SIZE; n++) {
                 int oidx = out_start + n;
-                if (oidx >= out_L) break;
+                if (oidx >= *out_L) break;
 
                 float sample = ifft_buf[n] * invN;
                 float wsample = sample * win[n];
@@ -215,7 +220,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
     }
 
     // Normalize overlap-add
-    for (int n = 0; n < out_L; n++) {
+    for (int n = 0; n < *out_L; n++) {
         float g = norm[n];
         if (g < 1e-12f) g = 1.0f;
         float invg = 1.0f / g;
@@ -224,7 +229,7 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
         }
     }
     
-    for (int n = 0; n < out_L; n++) {
+    for (int n = 0; n < *out_L; n++) {
         for (int ch = 0; ch < NUM_CHANNELS; ch++) {
             float v = out[(size_t)n * NUM_CHANNELS + (size_t)ch];
             // simple clip

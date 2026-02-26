@@ -4,6 +4,8 @@
 #include "main.hpp"
 #include <fftw3.h>
 
+#define MAX_TIME_STRETCH 3.0
+
 /* Functions to support phase vocoder implementation */
 
 /* Sampled data info */
@@ -30,13 +32,12 @@ typedef struct {
 
 int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
                     float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase, 
-                    fftwf_complex **X, fftwf_complex **Y, 
-                    float time_stretch, int* num_windows, int* Hs, 
+                    fftwf_complex **X, fftwf_complex **Y, int* num_windows, int* Hs, 
                     int* out_L, fftwf_plan* p_r2c, fftwf_plan* p_c2r);
 
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
-                    float *out, float *norm, int16_t *new_data, float* prev_phase,float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                    int num_windows, int Hs, int out_L, fftwf_plan p_r2c, fftwf_plan p_c2r);
+                  float *out, float *norm, int16_t *new_data, float* prev_phase, float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
+                  float time_stretch, int *out_L, int num_windows, fftwf_plan p_r2c, fftwf_plan p_c2r) ;
 
 
 
