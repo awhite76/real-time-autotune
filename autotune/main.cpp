@@ -179,6 +179,8 @@ PitchSeries buildPitchSeries_Tms(const StereoWavI16 &wav, float t_ms)
         ps.leftConf[k] = cL;
         ps.rightHz[k] = f0R;
         ps.rightConf[k] = cR;
+
+        cout << f0L << f0R << endl;
     }
 
     return ps;
@@ -339,8 +341,6 @@ int main(int argc, char **argv)
         rcvd = 0;
         while (rcvd < PERIOD_FRAMES)
         {
-            cout << "In the reading portion\n";
-
             snd_pcm_sframes_t r = snd_pcm_readi(
                 capture_handle,
                 buffer + rcvd * CHANNELS,
@@ -436,8 +436,6 @@ int main(int argc, char **argv)
         sent = 0;
         while (sent < PERIOD_FRAMES)
         {
-
-            cout << "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
                 rs_out + sent * CHANNELS,
