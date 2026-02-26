@@ -11,8 +11,7 @@
 #define PERIOD_FRAMES (SAMPLE_RATE * T_MS / 1000) // Period frames represents how many samples per sampling period of one channel
 
 /* DMA engine buffer */
-#define NUM_PERIOD_FRAMES 4 // Number of period frames DMA buffer should hold
-#define BUFFER_FRAMES (PERIOD_FRAMES * NUM_PERIOD_FRAMES) // Buffer frames represents size of DMA ring buffer
+#define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS) // Buffer frames represents size of DMA ring buffer
 
 using namespace std;
 

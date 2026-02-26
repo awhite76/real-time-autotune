@@ -178,7 +178,7 @@ int main(int argc, char **argv)
     }
 
     /****************** audio buffers *****************/
-    int16_t buffer[PERIOD_FRAMES * CHANNELS]; // buffer holds processing segments -- number of samples per channel times channel size
+    int16_t buffer[BUFFER_FRAMES]; // buffer holds processing segments -- number of samples per channel times channel size
     memset(buffer, 0, sizeof(buffer));
 
     // Per-channel mono buffers (PERIOD_FRAMES samples each)
