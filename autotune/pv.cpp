@@ -63,11 +63,6 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    // Calculate normalization buffer for IFFT
-    for(int n = 0; n < WINDOW_SIZE; n++) {
-        norm[n] = win[n]*win[n];    
-    }
-
     *prev_phase = (float*)calloc((size_t)CHANNELS * (size_t)FREQ_BINS, sizeof(float));
     *sum_phase  = (float*)calloc((size_t)CHANNELS * (size_t)FREQ_BINS, sizeof(float));
     if (!*prev_phase || !*sum_phase) {
