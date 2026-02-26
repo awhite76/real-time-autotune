@@ -16,16 +16,11 @@ float fast_atan2f(float y, float x) {
 void hann_window(float *w, int N) {
     // periodic Hann: w[n] = 0.5 - 0.5*cos(2*pi*n/N)
     const float two_pi = 2.0f * (float)M_PI;
-    for (int n = 0; n < N; n++) {
-        w[n] = 0.5f - 0.5f * cosf(two_pi * (float)n / (float)N);
-    }
 }
 
 int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
                     float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase, 
-                    fftwf_complex **X, fftwf_complex **Y, 
-                    float time_stretch, int* num_windows, int* Hs, 
-                    int* out_L, fftwf_plan* p_r2c, fftwf_plan* p_c2r)
+                    fftwf_complex **X, fftwf_complex **Y, int* num_windows, int* Hs, int* out_L, fftwf_plan* p_r2c, fftwf_plan* p_c2r)
 
 {
 
@@ -41,7 +36,7 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
         return -1;
     }
 
-    *Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
+    *Hs = (int)lroundf(ANALYSIS_HOP * MAX_TIME_STRETCH);
     *num_windows = 1 + (int)ceilf((float)((NUM_FRAMES) - WINDOW_SIZE) / (float)ANALYSIS_HOP);
     *out_L = (*num_windows - 1) * (*Hs) + WINDOW_SIZE; 
     *win = (float*)fftwf_malloc(sizeof(float) * (size_t)WINDOW_SIZE);
@@ -114,7 +109,17 @@ int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omeg
 
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
                   float *out, float *norm, int16_t *new_data, float* prev_phase, float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                  int num_windows, int Hs, int out_L, fftwf_plan p_r2c, fftwf_plan p_c2r) {
+                  int num_windows, float time_stretch, fftwf_plan p_r2c, fftwf_plan p_c2r) {
+
+    // Calculate analysis hop 
+
+    if(time_stretch > MAX_TIME_STRETCH) {
+        time_stretch =  MAX_TIME_STRETCH;
+    }
+
+    int Hs = (int)lroundf(ANALYSIS_HOP * MAX_TIME_STRETCH);
+
+    int out_L = (num_windows - 1) * (Hs) + WINDOW_SIZE;
 
 
     // --------------------------
@@ -196,6 +201,11 @@ int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, fl
                 float wsample = sample * win[n];
 
                 out[(size_t)oidx * (size_t)CHANNELS + (size_t)ch] += wsample;
+
+                if (ch == 0) {
+                    // window-squared normalization for COLA robustness
+                    norm[oidx] += win[n] * win[n];
+                }
             }
         }
     }

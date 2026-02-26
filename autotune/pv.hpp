@@ -12,6 +12,8 @@
 #define ANALYSIS_HOP ((WINDOW_SIZE)/4)
 #define FREQ_BINS (1 + WINDOW_SIZE/2) 
 
+#define MAX_TIME_STRETCH 3.0
+
 typedef struct {
     int N;              // FFT size / window length
     int H;              // hop size
@@ -25,13 +27,11 @@ typedef struct {
 
 int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
                     float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase, 
-                    fftwf_complex **X, fftwf_complex **Y, 
-                    float time_stretch, int* num_windows, int* Hs, 
-                    int* out_L, fftwf_plan* p_r2c, fftwf_plan* p_c2r);
+                    fftwf_complex **X, fftwf_complex **Y, int* num_windows, int* Hs, int* out_L, fftwf_plan* p_r2c, fftwf_plan* p_c2r);
 
 int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
-                    float *out, float *norm, int16_t *new_data, float* prev_phase,float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                    int num_windows, int Hs, int out_L, fftwf_plan p_r2c, fftwf_plan p_c2r);
+                  float *out, float *norm, int16_t *new_data, float* prev_phase, float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
+                  int num_windows, float time_stretch, fftwf_plan p_r2c, fftwf_plan p_c2r);
 
 
 

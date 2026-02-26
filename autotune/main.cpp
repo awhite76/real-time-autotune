@@ -245,7 +245,7 @@ int main(int argc, char **argv)
     cout << "Prevocoder\n";
 
     int vor = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase,
-                             &X, &Y, time_stretch, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
+                             &X, &Y, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
 
     printf("Vocoder settup: %d\n", vor);
 
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
         memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
         memset(norm, 0, (size_t)out_L * sizeof(float));
         phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y,
-                      num_windows, Hs, out_L, p_r2c, p_c2r);
+                      num_windows, time_stretch, p_r2c, p_c2r);
 
         int outFrames = time_stretch_process(
             rs,
