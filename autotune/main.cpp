@@ -258,14 +258,12 @@ int main(int argc, char **argv)
     {
         // Capture PERIOD_FRAMES
         rcvd = 0;
-        while (rcvd < PERIOD_FRAMES)
+        while (rcvd < BUFFER_FRAMES / 2)
         {
-            cout << "In the reading portion\n";
-
             snd_pcm_sframes_t r = snd_pcm_readi(
                 capture_handle,
                 buffer + rcvd * CHANNELS,
-                PERIOD_FRAMES - rcvd);
+                (BUFFER_FRAMES / 2) - rcvd);
             if (r < 0)
             {
                 r = xrun_recover(capture_handle, (int)r);
@@ -333,38 +331,37 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+        // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        float f0L = yinL.getPitch(left);
-        float cL = yinL.getProbability();
+        // float f0L = yinL.getPitch(left);
+        // float cL = yinL.getProbability();
 
-        float f0R = yinR.getPitch(right);
-        float cR = yinR.getProbability();
+        // float f0R = yinR.getPitch(right);
+        // float cR = yinR.getProbability();
 
-        float f0Best = (cL >= cR) ? f0L : f0R;
-        float cBest = (cL >= cR) ? cL : cR;
-        const char *chBest = (cL >= cR) ? "L" : "R";
+        // float f0Best = (cL >= cR) ? f0L : f0R;
+        // float cBest = (cL >= cR) ? cL : cR;
+        // const char *chBest = (cL >= cR) ? "L" : "R";
 
-        static int printCountdown = 0;
-        if (++printCountdown >= 10)
-        {
-            printCountdown = 0;
-            if (f0Best > 0.0f)
-                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-            else
-                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        }
+        // static int printCountdown = 0;
+        // if (++printCountdown >= 10)
+        // {
+        //     printCountdown = 0;
+        //     if (f0Best > 0.0f)
+        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+        //     else
+        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+        // }
 
         // Playback PERIOD_FRAMES
         sent = 0;
-        while (sent < PERIOD_FRAMES)
+        while (sent < BUFFER_FRAMES / 2)
         {
 
-            cout << "In the writing portion\n";
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
                 rs_out + sent * CHANNELS,
-                PERIOD_FRAMES - sent);
+                (BUFFER_FRAMES / 2) - sent);
             if (w < 0)
             {
                 w = xrun_recover(playback_handle, (int)w);
