@@ -179,8 +179,6 @@ PitchSeries buildPitchSeries_Tms(const StereoWavI16 &wav, float t_ms)
         ps.leftConf[k] = cL;
         ps.rightHz[k] = f0R;
         ps.rightConf[k] = cR;
-
-        cout << f0L << f0R << endl;
     }
 
     return ps;
@@ -335,6 +333,9 @@ int main(int argc, char **argv)
     snd_pcm_sframes_t sent = 0;
     snd_pcm_sframes_t rcvd = 0;
 
+    size_t file_idx = 0;
+    size_t max_file_idx = pitchTS.size();
+
     while (true)
     {
         // Capture PERIOD_FRAMES
@@ -367,19 +368,8 @@ int main(int argc, char **argv)
         // float f0R = yinR.getPitch(right);
         // float cR = yinR.getProbability();
 
-        // float f0Best = (cL >= cR) ? f0L : f0R;
-        // float cBest = (cL >= cR) ? cL : cR;
-        // const char *chBest = (cL >= cR) ? "L" : "R";
-
-        // static int printCountdown = 0;
-        // if (++printCountdown >= 10)
-        // {
-        //     printCountdown = 0;
-        //     if (f0Best > 0.0f)
-        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-        //     else
-        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        // }
+        // float time_stretch_L = pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
+        // float time_stretch_R = pitchTS.rightHz[file_idx++ % max_file_idx] / f0R;
 
         /* Run phase vo */
         memset(out, 0, (size_t)out_L * NUM_CHANNELS * sizeof(float));
