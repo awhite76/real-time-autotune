@@ -16,6 +16,9 @@ float fast_atan2f(float y, float x) {
 void hann_window(float *w, int N) {
     // periodic Hann: w[n] = 0.5 - 0.5*cos(2*pi*n/N)
     const float two_pi = 2.0f * (float)M_PI;
+    for (int n = 0; n < N; n++) {
+        w[n] = 0.5f - 0.5f * cosf(two_pi * (float)n / (float)N);
+    }
 }
 
 int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
