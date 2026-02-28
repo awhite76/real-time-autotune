@@ -279,6 +279,7 @@ int main(int argc, char **argv)
         }
 
         /**************** Yin pitch detection ***************/
+        static float prevf0Best = 0.0f; //most recent f0best
         deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
         float f0L = yinL.getPitch(left);
@@ -294,9 +295,11 @@ int main(int argc, char **argv)
         static int printCountdown = 0;
         if (++printCountdown >= 10)
         {
+            cerr << "most recent best is: " << prevf0Best << "\n";
             printCountdown = 0;
             if (f0Best > 0.0f)
                 cerr << "best for input (" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+                prevf0Best = f0Best;
             else
                 cerr << "best for input (" << chBest << "): f0=none conf=" << cBest << "\n";
         }
