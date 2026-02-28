@@ -296,9 +296,9 @@ int main(int argc, char **argv)
         {
             printCountdown = 0;
             if (f0Best > 0.0f)
-                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+                cerr << "best for input (" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
             else
-                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+                cerr << "best for input (" << chBest << "): f0=none conf=" << cBest << "\n";
         }
 
         /* Run phase vo */
@@ -345,14 +345,14 @@ int main(int argc, char **argv)
         const char *chBest = (cL >= cR) ? "L" : "R";
 
         static int printCountdown = 0;
-        if (++printCountdown >= 10)
-        {
-            printCountdown = 0;
-            if (f0Best > 0.0f)
-                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-            else
-                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        }
+        // if (++printCountdown >= 10)
+        // {
+        //     printCountdown = 0;
+        //     if (f0Best > 0.0f)
+        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+        //     else
+        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+        // }
 
         // Playback PERIOD_FRAMES
         sent = 0;
