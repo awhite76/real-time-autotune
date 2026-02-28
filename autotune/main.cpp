@@ -297,9 +297,10 @@ int main(int argc, char **argv)
         {
             cerr << "most recent best is: " << prevf0Best << "\n";
             printCountdown = 0;
-            if (f0Best > 0.0f)
+            if (f0Best > 0.0f) {
                 cerr << "best for input (" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
                 prevf0Best = f0Best;
+            }
             else
                 cerr << "best for input (" << chBest << "): f0=none conf=" << cBest << "\n";
         }
