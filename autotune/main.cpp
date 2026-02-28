@@ -268,7 +268,7 @@ int main(int argc, char **argv)
                 PERIOD_FRAMES - rcvd);
             if (r < 0)
             {
-                cerr << "Read recover" << "\n"
+                cerr << "Read recover" << "\n";
                 r = xrun_recover(capture_handle, (int)r);
                 if (r < 0)
                 {
@@ -281,6 +281,7 @@ int main(int argc, char **argv)
         }
 
         /**************** Yin pitch detection ***************/
+        cerr << "Yin pitch detection" << "\n";
         static float prevf0Best = 0.0f; //most recent f0best
         deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
@@ -310,6 +311,7 @@ int main(int argc, char **argv)
 
         static float target_pitch = 440.0f;
 
+        
         if(prevf0Best > 0) {
             time_stretch = target_pitch / prevf0Best;
         }else {
@@ -323,6 +325,7 @@ int main(int argc, char **argv)
 
 
         /* Run phase vo */
+        cerr << "phasevo memset" << "\n";
         memset(out, 0, (size_t)max_out_L * NUM_CHANNELS * sizeof(float));
         memset(norm, 0, (size_t)max_out_L * sizeof(float));
 
@@ -330,6 +333,8 @@ int main(int argc, char **argv)
         phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, time_stretch, &out_L,
                       num_windows, p_r2c, p_c2r);
 
+
+        cerr << "running time stretch" << "\n";
         int outFrames = time_stretch_process(
             rs,
             new_data,
@@ -338,6 +343,8 @@ int main(int argc, char **argv)
             PERIOD_FRAMES, // we want exactly one period for ALSA
             time_stretch); // ratio
 
+
+        cerr << "finish time stretch" << "\n";
         if (outFrames == 0)
         {
             cerr << "Speex resample failed\n";
@@ -376,6 +383,8 @@ int main(int argc, char **argv)
         // }
 
         // Playback PERIOD_FRAMES
+
+        cerr << "sending data" << "\n";
         sent = 0;
         while (sent < PERIOD_FRAMES)
         {
