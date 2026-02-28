@@ -202,6 +202,7 @@ int main(int argc, char **argv)
         snd_pcm_sframes_t w = snd_pcm_writei(playback_handle, buffer, PERIOD_FRAMES);
         if (w < 0)
         {
+            cerr << "Refill Recover" << "\n";
             w = xrun_recover(playback_handle, (int)w);
             if (w < 0)
             {
@@ -267,6 +268,7 @@ int main(int argc, char **argv)
                 PERIOD_FRAMES - rcvd);
             if (r < 0)
             {
+                cerr << "Read recover" << "\n"
                 r = xrun_recover(capture_handle, (int)r);
                 if (r < 0)
                 {
@@ -384,6 +386,8 @@ int main(int argc, char **argv)
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {
+
+                cerr << "Write recover" << "\n"; 
                 w = xrun_recover(playback_handle, (int)w);
                 if (w < 0)
                 {
