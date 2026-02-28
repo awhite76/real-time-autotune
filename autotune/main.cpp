@@ -240,7 +240,7 @@ int main(int argc, char **argv)
     fftwf_plan p_c2r;
 
     // 0.84 to 1.19 ~ +-3 semitones
-    float time_stretch = 0.75f;
+    float time_stretch = 2.0f;
 
     cout << "Prevocoder\n";
 
@@ -279,27 +279,27 @@ int main(int argc, char **argv)
         }
 
         /**************** Yin pitch detection ***************/
-        // deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
+        deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
-        // float f0L = yinL.getPitch(left);
-        // float cL = yinL.getProbability();
+        float f0L = yinL.getPitch(left);
+        float cL = yinL.getProbability();
 
-        // float f0R = yinR.getPitch(right);
-        // float cR = yinR.getProbability();
+        float f0R = yinR.getPitch(right);
+        float cR = yinR.getProbability();
 
-        // float f0Best = (cL >= cR) ? f0L : f0R;
-        // float cBest = (cL >= cR) ? cL : cR;
-        // const char *chBest = (cL >= cR) ? "L" : "R";
+        float f0Best = (cL >= cR) ? f0L : f0R;
+        float cBest = (cL >= cR) ? cL : cR;
+        const char *chBest = (cL >= cR) ? "L" : "R";
 
-        // static int printCountdown = 0;
-        // if (++printCountdown >= 10)
-        // {
-        //     printCountdown = 0;
-        //     if (f0Best > 0.0f)
-        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-        //     else
-        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        // }
+        static int printCountdown = 0;
+        if (++printCountdown >= 10)
+        {
+            printCountdown = 0;
+            if (f0Best > 0.0f)
+                cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+            else
+                cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+        }
 
         /* Run phase vo */
         memset(out, 0, (size_t)max_out_L * NUM_CHANNELS * sizeof(float));
