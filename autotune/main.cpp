@@ -306,7 +306,7 @@ int main(int argc, char **argv)
                 cerr << "best for input (" << chBest << "): f0=none conf=" << cBest << "\n";
         }
 
-        static float target_pitch = 440.0f
+        static float target_pitch = 440.0f;
 
         if(prevf0Best > 0) {
             time_stretch = target_pitch / prevf0Best;
