@@ -300,10 +300,25 @@ int main(int argc, char **argv)
             if (f0Best > 0.0f) {
                 cerr << "best for input (" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
                 prevf0Best = f0Best;
+                cerr << "time stretch was: " << time_stretch << "\n";
             }
             else
                 cerr << "best for input (" << chBest << "): f0=none conf=" << cBest << "\n";
         }
+
+        static float target_pitch = 440.0f
+
+        if(prevf0Best > 0) {
+            time_stretch = target_pitch / prevf0Best;
+        }else {
+            time_stretch = 1.0;
+        } 
+
+        if(time_stretch < 0.6 || time_stretch > 2.5) {
+            time_stretch = 1.0;
+        }
+
+
 
         /* Run phase vo */
         memset(out, 0, (size_t)max_out_L * NUM_CHANNELS * sizeof(float));
