@@ -332,19 +332,19 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+        //deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        float f0L = yinL.getPitch(left);
-        float cL = yinL.getProbability();
+        // float f0L = yinL.getPitch(left);
+        // float cL = yinL.getProbability();
 
-        float f0R = yinR.getPitch(right);
-        float cR = yinR.getProbability();
+        // float f0R = yinR.getPitch(right);
+        // float cR = yinR.getProbability();
 
-        float f0Best = (cL >= cR) ? f0L : f0R;
-        float cBest = (cL >= cR) ? cL : cR;
-        const char *chBest = (cL >= cR) ? "L" : "R";
+        // float f0Best = (cL >= cR) ? f0L : f0R;
+        // float cBest = (cL >= cR) ? cL : cR;
+        // const char *chBest = (cL >= cR) ? "L" : "R";
 
-        static int printCountdown = 0;
+        // static int printCountdown = 0;
         // if (++printCountdown >= 10)
         // {
         //     printCountdown = 0;
