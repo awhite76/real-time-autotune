@@ -43,6 +43,9 @@ int time_stretch_process(TimeStretchResampler &r,
         inFrames <= 0 || outCapacity <= 0 || s <= 0.0f)
         return 0;
 
+
+    cerr << "Out L is" << inFrames << "\n";
+    cerr << "s is " << s << "\n";
     // Update ratio only if changed
     if (s != r.last_s)
     {
