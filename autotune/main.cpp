@@ -303,7 +303,7 @@ int main(int argc, char **argv)
             if (f0Best > 0.0f) {
                 cerr << "best for input (" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
                 prevf0Best = f0Best;
-                cerr << "time stretch was: " << time_stretch << "\n";
+                cerr << "time stretch is: " << time_stretch << "\n";
             }
             else
                 cerr << "best for input (" << chBest << "): f0=none conf=" << cBest << "\n";
@@ -317,6 +317,9 @@ int main(int argc, char **argv)
         }else {
             time_stretch = 1.0;
         } 
+
+                        cerr << "time stretch is: " << time_stretch << "\n";
+
 
         if(time_stretch < 0.6 || time_stretch > 2.5) {
             time_stretch = 1.0;
