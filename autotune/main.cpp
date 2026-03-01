@@ -313,13 +313,18 @@ int main(int argc, char **argv)
         
        if(prevf0Best > 0) {
            time_stretch = target_pitch / prevf0Best;
-       }else if(time_stretch < 0.75) {
-           time_stretch = 0.750;
-       }else if(time_stretch > 2.5){
-           time_stretch = 2.5;
-	   }else {
+       }
+       
+       
+       else {
            time_stretch = 1.0;
        } 
+
+       if(time_stretch < 0.75) {
+            time_stretch = 0.750;
+       }else if(time_stretch > 2.5){
+            time_stretch = 2.5;
+	   }
 
         cerr << "TIME STRETCH IS: " << time_stretch << "\n";
 
