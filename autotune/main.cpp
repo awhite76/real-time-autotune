@@ -303,7 +303,6 @@ int main(int argc, char **argv)
             if (f0Best > 0.0f) {
                 cerr << "best for input (" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
                 prevf0Best = f0Best;
-                cerr << "time stretch is: " << time_stretch << "\n";
             }
             else
                 cerr << "best for input (" << chBest << "): f0=none conf=" << cBest << "\n";
@@ -318,10 +317,10 @@ int main(int argc, char **argv)
             time_stretch = 1.0;
         } 
 
-                        cerr << "time stretch is: " << time_stretch << "\n";
+        cerr << "time stretch is: " << time_stretch << "\n";
 
 
-        if(time_stretch < 0.6 || time_stretch > 2.5) {
+        if(time_stretch < 0.75 || time_stretch > 2.0) {
             time_stretch = 1.0;
         }
 
@@ -329,7 +328,7 @@ int main(int argc, char **argv)
 
         /* Run phase vo */
         cerr << "phasevo memset" << "\n";
-        memset(out, 0, (size_t)max_out_L * NUM_CHANNELS * sizeof(float));
+        memset(out, 0, (size_t)max_out_L * CHANNELS * sizeof(float));
         memset(norm, 0, (size_t)max_out_L * sizeof(float));
 
         int out_L;

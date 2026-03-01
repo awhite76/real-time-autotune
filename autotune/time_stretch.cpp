@@ -11,7 +11,6 @@ bool time_stretch_init(TimeStretchResampler &r,
     r.sampleRate = sampleRate;
     r.last_s = -1.0f;
 
-    // mono: 1 channel
     r.st = speex_resampler_init(
         CHANNELS,   // channels
         sampleRate, // in rate
@@ -74,6 +73,8 @@ int time_stretch_process(TimeStretchResampler &r,
     spx_uint32_t outLen = (spx_uint32_t)outCapacity;
 
     cerr << "Before resampler process interleavened......" << "\n";
+    cerr << "type casted inLen" << inLen << "\n";
+    cerr << "type casted outLen" << outLen << "\n";
     int err = speex_resampler_process_interleaved_int(
         r.st,
         input,
