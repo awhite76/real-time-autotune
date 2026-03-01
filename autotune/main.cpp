@@ -362,26 +362,25 @@ int main(int argc, char **argv)
 
         deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-         float f0L = yinL.getPitch(left);
-         float cL = yinL.getProbability();
+        float out_f0L = yinL.getPitch(left);
+        float out_cL = yinL.getProbability();
 
-         float f0R = yinR.getPitch(right);
-         float cR = yinR.getProbability();
+        float out_f0R = yinR.getPitch(right);
+        float out_cR = yinR.getProbability();
 
-         float f0Best = (cL >= cR) ? f0L : f0R;
-         float cBest = (cL >= cR) ? cL : cR;
-         const char *chBest = (cL >= cR) ? "L" : "R";
+        float out_f0Best = (cL >= cR) ? f0L : f0R;
+        float out_cBest = (cL >= cR) ? cL : cR;
+        const char *out_chBest = (cL >= cR) ? "L" : "R";
 
-         static int printCountdown = 0;
-         if (++printCountdown >= 10)
-         {
-             printCountdown = 0;
-             if (f0Best > 0.0f)
-                 cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-             else
-                 cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-         }
-
+        static int out_printCountdown = 0;
+        if (++out_printCountdown >= 10)
+        {
+            out_printCountdown = 0;
+            if (f0Best > 0.0f)
+                cerr << "best rs out(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+            else
+                cerr << "best rs out((" << chBest << "): f0=none conf=" << cBest << "\n";
+        }
         // Playback PERIOD_FRAMES
 
         cerr << "sending data" << "\n";
