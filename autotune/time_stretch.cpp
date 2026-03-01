@@ -43,14 +43,10 @@ int time_stretch_process(TimeStretchResampler &r,
         return 0;
 
 
-    cerr << "Out L is " << inFrames << "\n";
-    cerr << "s is " << s << "\n";
-    cerr << "frames per channel is " << outCapacity << "\n";
     // Update ratio only if changed
     if (s != r.last_s)
     {
 
-        cerr << "Before set rate frac" << "\n";
         const int den = 100;
         int num = (int)std::lround((double)s * (double)den);
         if (num < 1)
@@ -72,9 +68,6 @@ int time_stretch_process(TimeStretchResampler &r,
     spx_uint32_t inLen = (spx_uint32_t)inFrames;
     spx_uint32_t outLen = (spx_uint32_t)outCapacity;
 
-    cerr << "Before resampler process interleavened......" << "\n";
-    cerr << "type casted inLen" << inLen << "\n";
-    cerr << "type casted outLen" << outLen << "\n";
     int err = speex_resampler_process_interleaved_int(
         r.st,
         input,
