@@ -47,7 +47,7 @@ int time_stretch_process(TimeStretchResampler &r,
     if (s != r.last_s)
     {
 
-        const int den = 100;
+        const int den = 10000;
         int num = (int)std::lround((double)s * (double)den);
         if (num < 1)
             num = 1;

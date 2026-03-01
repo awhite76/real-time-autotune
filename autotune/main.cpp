@@ -306,7 +306,7 @@ int main(int argc, char **argv)
                 cerr << "best for input (" << chBest << "): f0=none conf=" << cBest << "\n";
         }
 
-        static float target_pitch = 440.0f;
+        static float target_pitch = 220.0f;
 
         
        if(prevf0Best > 0) {
@@ -315,9 +315,13 @@ int main(int argc, char **argv)
            time_stretch = 1.0;
        } 
 
-       if(time_stretch < 0.75 || time_stretch >2.5) {
-            time_stretch = 1.0;
-        }
+       if(time_stretch < 0.75) {
+            time_stretch = 0.750;
+       }else if(time_stretch > 2.5){
+            time_stretch = 2.5;
+	}
+
+        cerr << "TIME STRETCH IS: " << time_stretch << "\n";
 
         /* Run phase vo */
         memset(out, 0, (size_t)max_out_L * CHANNELS * sizeof(float));
@@ -352,27 +356,27 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+       deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        float out_f0L = yinL.getPitch(left);
-        float out_cL = yinL.getProbability();
+       float out_f0L = yinL.getPitch(left);
+       float out_cL = yinL.getProbability();
 
-        float out_f0R = yinR.getPitch(right);
-        float out_cR = yinR.getProbability();
+       float out_f0R = yinR.getPitch(right);
+       float out_cR = yinR.getProbability();
 
-        float out_f0Best = (out_cL >= out_cR) ? out_f0L : out_f0R;
-        float out_cBest = (out_cL >= out_cR) ? out_cL :out_cR;
-        const char *out_chBest = (out_cL >= out_cR) ? "L" : "R";
+       float out_f0Best = (out_cL >= out_cR) ? out_f0L : out_f0R;
+       float out_cBest = (out_cL >= out_cR) ? out_cL :out_cR;
+       const char *out_chBest = (out_cL >= out_cR) ? "L" : "R";
 
-        static int out_printCountdown = 0;
-        if (++out_printCountdown >= 10)
-        {
-            out_printCountdown = 0;
-            if (out_f0Best > 0.0f)
-                cerr << "best rs out(" << out_chBest << "): f0=" <<out_f0Best << " Hz conf=" << out_cBest << "\n";
-            else
-                cerr << "best rs out(" << out_chBest << "): f0=none conf=" << out_cBest << "\n";
-        }
+       static int out_printCountdown = 0;
+       if (++out_printCountdown >= 10)
+       {
+           out_printCountdown = 0;
+           if (out_f0Best > 0.0f)
+               cerr << "best rs out(" << out_chBest << "): f0=" <<out_f0Best << " Hz conf=" << out_cBest << "\n";
+           else
+               cerr << "best rs out(" << out_chBest << "): f0=none conf=" << out_cBest << "\n";
+       }
         // Playback PERIOD_FRAMES
 
         sent = 0;
