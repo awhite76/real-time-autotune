@@ -311,11 +311,11 @@ int main(int argc, char **argv)
         static float target_pitch = 440.0f;
 
         
-        if(prevf0Best > 0) {
-            time_stretch = target_pitch / prevf0Best;
-        }else {
-            time_stretch = 1.0;
-        } 
+        // if(prevf0Best > 0) {
+        //     time_stretch = target_pitch / prevf0Best;
+        // }else {
+        //     time_stretch = 1.0;
+        // } 
 
         cerr << "time stretch is: " << time_stretch << "\n";
 
