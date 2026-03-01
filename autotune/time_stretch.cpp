@@ -51,7 +51,7 @@ int time_stretch_process(TimeStretchResampler &r,
     {
 
         cerr << "Before set rate frac" << "\n";
-        const int den = 100000;
+        const int den = 100;
         int num = (int)std::lround((double)s * (double)den);
         if (num < 1)
             num = 1;

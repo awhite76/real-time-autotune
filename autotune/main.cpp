@@ -241,7 +241,7 @@ int main(int argc, char **argv)
     fftwf_plan p_c2r;
 
     // 0.84 to 1.19 ~ +-3 semitones
-    float time_stretch = 2.0f;
+    float time_stretch = 1.01198f;
 
     cout << "Prevocoder\n";
 
@@ -311,20 +311,18 @@ int main(int argc, char **argv)
         static float target_pitch = 440.0f;
 
         
-        // if(prevf0Best > 0) {
-        //     time_stretch = target_pitch / prevf0Best;
-        // }else {
-        //     time_stretch = 1.0;
-        // } 
+       if(prevf0Best > 0) {
+           time_stretch = target_pitch / prevf0Best;
+       }else {
+           time_stretch = 1.0;
+       } 
 
-        cerr << "time stretch is: " << time_stretch << "\n";
-
-
-        if(time_stretch < 0.75 || time_stretch > 2.0) {
+       if(time_stretch < 0.75 || time_stretch >2.5) {
             time_stretch = 1.0;
         }
 
-
+	
+        cerr << "time stretch is: " << time_stretch << "\n";
 
         /* Run phase vo */
         cerr << "phasevo memset" << "\n";
@@ -362,27 +360,27 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-        //deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        // float f0L = yinL.getPitch(left);
-        // float cL = yinL.getProbability();
+         float f0L = yinL.getPitch(left);
+         float cL = yinL.getProbability();
 
-        // float f0R = yinR.getPitch(right);
-        // float cR = yinR.getProbability();
+         float f0R = yinR.getPitch(right);
+         float cR = yinR.getProbability();
 
-        // float f0Best = (cL >= cR) ? f0L : f0R;
-        // float cBest = (cL >= cR) ? cL : cR;
-        // const char *chBest = (cL >= cR) ? "L" : "R";
+         float f0Best = (cL >= cR) ? f0L : f0R;
+         float cBest = (cL >= cR) ? cL : cR;
+         const char *chBest = (cL >= cR) ? "L" : "R";
 
-        // static int printCountdown = 0;
-        // if (++printCountdown >= 10)
-        // {
-        //     printCountdown = 0;
-        //     if (f0Best > 0.0f)
-        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-        //     else
-        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        // }
+         static int printCountdown = 0;
+         if (++printCountdown >= 10)
+         {
+             printCountdown = 0;
+             if (f0Best > 0.0f)
+                 cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+             else
+                 cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
+         }
 
         // Playback PERIOD_FRAMES
 
