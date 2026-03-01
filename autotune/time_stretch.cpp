@@ -46,6 +46,7 @@ int time_stretch_process(TimeStretchResampler &r,
 
     cerr << "Out L is " << inFrames << "\n";
     cerr << "s is " << s << "\n";
+    cerr << "frames per channel is " outCapacity << "\n";
     // Update ratio only if changed
     if (s != r.last_s)
     {
