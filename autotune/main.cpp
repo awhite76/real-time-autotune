@@ -319,8 +319,6 @@ int main(int argc, char **argv)
             time_stretch = 1.0;
         }
 
-	
-
         /* Run phase vo */
         memset(out, 0, (size_t)max_out_L * CHANNELS * sizeof(float));
         memset(norm, 0, (size_t)max_out_L * sizeof(float));
@@ -373,7 +371,7 @@ int main(int argc, char **argv)
             if (out_f0Best > 0.0f)
                 cerr << "best rs out(" << out_chBest << "): f0=" <<out_f0Best << " Hz conf=" << out_cBest << "\n";
             else
-                cerr << "best rs out((" << out_chBest << "): f0=none conf=" << out_cBest << "\n";
+                cerr << "best rs out(" << out_chBest << "): f0=none conf=" << out_cBest << "\n";
         }
         // Playback PERIOD_FRAMES
 
