@@ -281,7 +281,7 @@ int main(int argc, char **argv)
         }
 
         /**************** Yin pitch detection ***************/
-        static float prevf0Best = 0.0f; //most recent f0best
+        static float prevf0Best = 0.0f; // most recent f0best
         deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
         float f0L = yinL.getPitch(left);
@@ -298,7 +298,8 @@ int main(int argc, char **argv)
         if (++printCountdown >= 10)
         {
             printCountdown = 0;
-            if (f0Best > 0.0f) {
+            if (f0Best > 0.0f)
+            {
                 cerr << "best for input (" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
                 prevf0Best = f0Best;
             }
@@ -310,21 +311,24 @@ int main(int argc, char **argv)
 
         cerr << "last good pitch reading is: " << prevf0Best << "\n";
 
-        
-       if(prevf0Best > 0) {
-           time_stretch = target_pitch / prevf0Best;
-       }
-       
-       
-       else {
-           time_stretch = 1.0;
-       } 
+        if (prevf0Best > 0)
+        {
+            time_stretch = target_pitch / prevf0Best;
+        }
 
-       if(time_stretch < 0.75) {
-            time_stretch = 0.750;
-       }else if(time_stretch > 2.5){
+        else
+        {
+            time_stretch = 1.0;
+        }
+
+        if (time_stretch < 0.40)
+        {
+            time_stretch = 0.40;
+        }
+        else if (time_stretch > 2.5)
+        {
             time_stretch = 2.5;
-	   }
+        }
 
         cerr << "TIME STRETCH IS: " << time_stretch << "\n";
 
@@ -336,7 +340,6 @@ int main(int argc, char **argv)
         phase_vocoder(buffer, time_buf, win, ifft_buf, omega, out, norm, new_data, prev_phase, sum_phase, X, Y, time_stretch, &out_L,
                       num_windows, p_r2c, p_c2r);
 
-
         int outFrames = time_stretch_process(
             rs,
             new_data,
@@ -344,7 +347,6 @@ int main(int argc, char **argv)
             rs_out,
             PERIOD_FRAMES, // we want exactly one period for ALSA
             time_stretch); // ratio
-
 
         if (outFrames == 0)
         {
@@ -361,27 +363,27 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-       deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-       float out_f0L = yinL.getPitch(left);
-       float out_cL = yinL.getProbability();
+        float out_f0L = yinL.getPitch(left);
+        float out_cL = yinL.getProbability();
 
-       float out_f0R = yinR.getPitch(right);
-       float out_cR = yinR.getProbability();
+        float out_f0R = yinR.getPitch(right);
+        float out_cR = yinR.getProbability();
 
-       float out_f0Best = (out_cL >= out_cR) ? out_f0L : out_f0R;
-       float out_cBest = (out_cL >= out_cR) ? out_cL :out_cR;
-       const char *out_chBest = (out_cL >= out_cR) ? "L" : "R";
+        float out_f0Best = (out_cL >= out_cR) ? out_f0L : out_f0R;
+        float out_cBest = (out_cL >= out_cR) ? out_cL : out_cR;
+        const char *out_chBest = (out_cL >= out_cR) ? "L" : "R";
 
-       static int out_printCountdown = 0;
-       if (++out_printCountdown >= 10)
-       {
-           out_printCountdown = 0;
-           if (out_f0Best > 0.0f)
-               cerr << "best rs out(" << out_chBest << "): f0=" <<out_f0Best << " Hz conf=" << out_cBest << "\n";
-           else
-               cerr << "best rs out(" << out_chBest << "): f0=none conf=" << out_cBest << "\n";
-       }
+        static float prevBestOut = 0.0f;
+        prevBestOut = out_f0Best > 0.0f ? out_f0Best : prevBestOut;
+
+        static int out_printCountdown = 0;
+        if (++out_printCountdown >= 10)
+        {
+            out_printCountdown = 0;
+            cerr << "last good pitch reading is: " << prevBestOut << "\n";
+        }
         // Playback PERIOD_FRAMES
 
         sent = 0;
@@ -395,7 +397,7 @@ int main(int argc, char **argv)
             if (w < 0)
             {
 
-                cerr << "Write recover" << "\n"; 
+                cerr << "Write recover" << "\n";
                 w = xrun_recover(playback_handle, (int)w);
                 if (w < 0)
                 {
