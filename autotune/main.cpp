@@ -382,7 +382,7 @@ int main(int argc, char **argv)
         if (++out_printCountdown >= 10)
         {
             out_printCountdown = 0;
-            cerr << "last good pitch reading is: " << prevBestOut << "\n";
+            cerr << "rs out good reading: " << prevBestOut << "\n";
         }
         // Playback PERIOD_FRAMES
 
