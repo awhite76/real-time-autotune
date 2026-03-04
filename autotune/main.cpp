@@ -400,9 +400,11 @@ int main(int argc, char **argv)
         static float vocalsBest = 0.0f;
         static int repeat_vocals = 0;
 
-        if (pitchTS.leftHz[file_idx++ % max_file_idx] || pitchTS.rightHz[file_idx++ % max_file_idx])
+        int curr_idx = file_idx++ % max_file_idx;
+
+        if (pitchTS.leftHz[curr_idx] || pitchTS.rightHz[curr_idx])
         {
-            vocalsBest = (pitchTS.leftConf[file_idx++ % max_file_idx] >= pitchTS.rightConf[file_idx++ % max_file_idx]) ? pitchTS.leftHz[file_idx++ % max_file_idx] : pitchTS.rightHz[file_idx++ % max_file_idx];
+            vocalsBest = (pitchTS.leftConf[curr_idx] >= pitchTS.rightConf[curr_idx]) ? pitchTS.leftHz[curr_idx] : pitchTS.rightHz[curr_idx];
             repeat_vocals = 0;
         }
         else
@@ -430,7 +432,7 @@ int main(int argc, char **argv)
         if (print_count++ > 50)
         {
             print_count = 0;
-            cout << "Input pitch: " << f0L << "\nFile pitch: " << pitchTS.leftHz[file_idx++ % max_file_idx] << "\nTime stretch: " << time_stretch << endl;
+            cout << "Input pitch: " << f0L << "\nFile pitch: " << pitchTS.leftHz[curr_idx] << "\nTime stretch: " << time_stretch << endl;
         }
 
         /* Run phase vo */
@@ -466,24 +468,24 @@ int main(int argc, char **argv)
 
         deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        float f0L = yinL.getPitch(left);
-        float cL = yinL.getProbability();
+        float outf0L = yinL.getPitch(left);
+        float outcL = yinL.getProbability();
 
-        float f0R = yinR.getPitch(right);
-        float cR = yinR.getProbability();
+        float outf0R = yinR.getPitch(right);
+        float outcR = yinR.getProbability();
 
-        float f0Best = (cL >= cR) ? f0L : f0R;
-        float cBest = (cL >= cR) ? cL : cR;
-        const char *chBest = (cL >= cR) ? "L" : "R";
+        float outf0Best = (outcL >= outcR) ? outf0L : outf0R;
+        float outcBest = (outcL >= outcR) ? outcL : outcR;
+        const char *outchBest = (outcL >= outcR) ? "L" : "R";
 
         static int printCountdown = 0;
         if (++printCountdown >= 10)
         {
             printCountdown = 0;
             if (f0Best > 0.0f)
-                cerr << "rs out best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+                cerr << "rs out best(" << outchBest << "): f0=" << outf0Best << " Hz conf=" << outcBest << "\n";
             else
-                cerr << "rs out best(" << chBest << "): f0=none conf=" << cBest << "\n";
+                cerr << "rs out best(" << outchBest << "): f0=none conf=" << outcBest << "\n";
         }
 
         // Playback PERIOD_FRAMES
