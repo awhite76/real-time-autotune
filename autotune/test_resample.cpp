@@ -85,3 +85,18 @@ void test_resample(const std::string &inputWavPath)
 
     time_stretch_destroy(r);
 }
+
+int main(int argc, char **argv)
+{
+    try
+    {
+        std::string in = (argc > 1) ? argv[1] : "../assets/440Hz.wav";
+        test_resample(in);
+        return 0;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "test_resample failed: " << e.what() << "\n";
+        return 1;
+    }
+}

@@ -119,7 +119,7 @@ void deinterleave_stereo_i16(const int16_t *interleavedLR,
 }
 
 // Minimal WAV writer: 16-bit PCM stereo interleaved
-static void writeStereoWav_i16_interleaved(
+void writeStereoWav_i16_interleaved(
     const std::string &filename,
     uint32_t sampleRate,
     const int16_t *interleavedLR,
@@ -169,7 +169,7 @@ static void writeStereoWav_i16_interleaved(
         throw std::runtime_error("Failed while writing wav: " + filename);
 }
 
-static std::vector<int16_t> interleaveStereo(const StereoWavI16 &wav)
+std::vector<int16_t> interleaveStereo(const StereoWavI16 &wav)
 {
     if (wav.left.size() != wav.right.size())
         throw std::runtime_error("interleaveStereo: L/R size mismatch");
