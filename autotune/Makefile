@@ -30,4 +30,4 @@ test_pv: $(TEST_PV_OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET) $(OBJS) $(TEST_RESAMPLE_OBJS) test_resample $(TEST_PV_OBJS) test_pv
