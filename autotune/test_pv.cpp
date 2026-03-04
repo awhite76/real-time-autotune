@@ -12,15 +12,31 @@
 #include <sys/stat.h> // mkdir
 #include <sys/types.h>
 
-#include "util.hpp" // loadStereoWav_i16, interleaveStereo, writeStereoWav_i16_interleaved
-#include "time_stretch.hpp"
-#include "pv.hpp" // settup_vocoder, phase_vocoder, constants like NUM_CHANNELS, FREQ_BINS, WINDOW_SIZE
+#include "util.hpp"         // loadStereoWav_i16, interleaveStereo, writeStereoWav_i16_interleaved
+#include "time_stretch.hpp" // TimeStretchResampler + time_stretch_*
+#include "pv.hpp"           // settup_vocoder, phase_vocoder, NUM_CHANNELS, NUM_FRAMES
+
+using namespace std;
+
+static string make_outname(const string &inPath, const string &tag, float s)
+{
+    auto dot = inPath.find_last_of('.');
+    string stem = (dot == string::npos) ? inPath : inPath.substr(0, dot);
+    ostringstream ss;
+    ss << stem << "_" << tag << "_s" << fixed << setprecision(2) << s;
+    string name = ss.str();
+    for (char &c : name)
+        if (c == '.')
+            c = 'p';
+    name += ".wav";
+    return name;
+}
 
 int main(int argc, char **argv)
 {
     try
     {
-        std::string inPath = (argc > 1) ? argv[1] : "../assets/440Hz.wav";
+        string inPath = (argc > 1) ? argv[1] : "../assets/440Hz.wav";
 
         // Ensure output directory exists
         const char *outdir = "../out/pv_out";
@@ -29,15 +45,19 @@ int main(int argc, char **argv)
         // Load file
         StereoWavI16 wav = loadStereoWav_i16(inPath);
         if (wav.sampleRate == 0)
-            throw std::runtime_error("Invalid WAV sample rate");
+            throw runtime_error("Invalid WAV sample rate");
         if (wav.left.empty())
-            throw std::runtime_error("Empty WAV");
+            throw runtime_error("Empty WAV");
 
         // Interleave LRLR...
-        std::vector<int16_t> inter = interleaveStereo(wav);
-        const int inFrames = static_cast<int>(wav.left.size());
+        vector<int16_t> inter = interleaveStereo(wav);
+        const int totalFrames = static_cast<int>(wav.left.size());
 
-        // Setup vocoder (allocs/win/fftw plans/etc)
+        // We'll process input in chunks of NUM_FRAMES frames (vocoder expects that)
+        const int chunkFrames = NUM_FRAMES; // from pv.hpp
+        const size_t samplesPerChunk = (size_t)chunkFrames * (size_t)NUM_CHANNELS;
+
+        // Setup vocoder for chunk-sized processing (allocate buffers sized for chunkFrames)
         float *time_buf = nullptr;
         float *win = nullptr;
         float *ifft_buf = nullptr;
@@ -50,84 +70,120 @@ int main(int argc, char **argv)
         fftwf_complex *X = nullptr;
         fftwf_complex *Y = nullptr;
         int num_windows = 0;
-        int Hs = 0;
-        int out_L = 0;
+        int Hs_alloc = 0;
+        int max_out_L = 0;
         fftwf_plan p_r2c = nullptr;
         fftwf_plan p_c2r = nullptr;
 
+        // If your settup_vocoder takes input_frames, pass chunkFrames to size buffers appropriately.
+        // If your version does not take input_frames, call it as you normally do.
         int rc = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase,
-                                &X, &Y, &num_windows, &Hs, &out_L, &p_r2c, &p_c2r);
+                                &X, &Y, chunkFrames, &num_windows, &Hs_alloc, &max_out_L, &p_r2c, &p_c2r);
         if (rc != 0)
-            throw std::runtime_error("settup_vocoder failed");
+            throw runtime_error("settup_vocoder failed");
 
-        std::cout << "Vocoder setup ok: num_windows=" << num_windows << "  initial_out_L=" << out_L << "\n";
+        cerr << "Vocoder setup: chunkFrames=" << chunkFrames << " num_windows=" << num_windows
+             << " alloc_out_L=" << max_out_L << "\n";
 
-        // Prepare Speex resampler instance (we will init/destroy per run via helper)
+        // Init speex resampler
         TimeStretchResampler rs;
         if (!time_stretch_init(rs, wav.sampleRate, /*quality=*/5))
         {
-            // Not fatal but warn
-            std::cerr << "Warning: time_stretch_init failed (resampling disabled)\n";
+            cerr << "Warning: time_stretch_init failed (resampling disabled)\n";
         }
 
-        // Sweep s
+        // Buffer we pass to phase_vocoder for each chunk (interleaved samples)
+        vector<int16_t> chunkBuf(samplesPerChunk);
+
+        // For each stretch factor s, run vocoder repeatedly over input chunks and concatenate outputs
         for (float s = 0.40f; s <= 2.5001f; s += 0.30f)
         {
-            std::cout << "=== Processing s=" << std::fixed << std::setprecision(2) << s << " ===\n";
+            cout << "=== Processing s=" << fixed << setprecision(2) << s << " ===\n";
 
-            // Clear vocoder output buffers (out and norm and prev/sum phases)
-            if (out && norm)
-                memset(out, 0, (size_t)out_L * (size_t)NUM_CHANNELS * sizeof(float));
-            if (norm)
-                memset(norm, 0, (size_t)out_L * sizeof(float));
+            // clear vocoder state so each s run starts fresh (optional)
             if (prev_phase)
                 memset(prev_phase, 0, (size_t)NUM_CHANNELS * (size_t)FREQ_BINS * sizeof(float));
             if (sum_phase)
                 memset(sum_phase, 0, (size_t)NUM_CHANNELS * (size_t)FREQ_BINS * sizeof(float));
 
-            // Call phase vocoder: produces new_data (int16 interleaved) and updates out_L based on s
-            int pv_err = phase_vocoder(inter.data(), time_buf, win, ifft_buf, omega,
-                                       out, norm, new_data, prev_phase, sum_phase, X, Y,
-                                       s, &out_L, num_windows, p_r2c, p_c2r);
-            if (pv_err != 0)
+            // storage for concatenated phase-vocoder output (interleaved int16)
+            vector<int16_t> pv_concat;
+            pv_concat.reserve((size_t)totalFrames * (size_t)NUM_CHANNELS / 2); // heuristic reserve
+
+            int readPos = 0;
+            while (readPos < totalFrames)
             {
-                std::cerr << "phase_vocoder failed for s=" << s << " (err=" << pv_err << ")\n";
-                continue;
-            }
+                // copy next chunkFrames frames (zero-pad tail)
+                int avail = totalFrames - readPos;
+                int toCopy = std::min(avail, chunkFrames);
+                // interleaved index = readPos * NUM_CHANNELS
+                memcpy(chunkBuf.data(), inter.data() + (size_t)readPos * NUM_CHANNELS, (size_t)toCopy * NUM_CHANNELS * sizeof(int16_t));
+                if (toCopy < chunkFrames)
+                {
+                    // zero pad rest
+                    memset(chunkBuf.data() + (size_t)toCopy * NUM_CHANNELS, 0, (size_t)(chunkFrames - toCopy) * NUM_CHANNELS * sizeof(int16_t));
+                }
 
-            // Write the raw phase-vocoder **time-stretched** output
-            std::string pv_outname = std::string(outdir) + "/pv_" + std::to_string(static_cast<int>(s * 100)) + "pct.wav";
-            writeStereoWav_i16_interleaved(pv_outname, wav.sampleRate, new_data, (uint32_t)out_L);
-            std::cout << "Wrote phase-vocoder output: " << pv_outname << " frames=" << out_L << "\n";
+                // Zero out float accum buffers (out, norm) before call
+                if (out && norm)
+                {
+                    memset(out, 0, (size_t)max_out_L * (size_t)NUM_CHANNELS * sizeof(float));
+                    memset(norm, 0, (size_t)max_out_L * sizeof(float));
+                }
 
-            // Now resample the vocoder output by the same factor 's' to produce a pitch-shifted result.
-            // If time_stretch_process maps inputFrames -> approx inputFrames * s outputFrames, allocate accordingly.
+                // Call phase vocoder on this chunk; it will update out_L for this chunk
+                int out_L = 0;
+                int pv_err = phase_vocoder(chunkBuf.data(), time_buf, win, ifft_buf, omega,
+                                           out, norm, new_data, prev_phase, sum_phase, X, Y,
+                                           s, &out_L, num_windows, p_r2c, p_c2r);
+                if (pv_err != 0)
+                {
+                    cerr << "phase_vocoder failed for s=" << s << " (err=" << pv_err << ")\n";
+                    break;
+                }
+
+                // Append new_data[0 .. out_L*NUM_CHANNELS-1] to pv_concat
+                size_t samplesProduced = (size_t)out_L * (size_t)NUM_CHANNELS;
+                pv_concat.insert(pv_concat.end(), new_data, new_data + samplesProduced);
+
+                // Advance read position by chunkFrames (non-overlapping chunks).
+                // If you prefer sliding processing, advance by ANALYSIS_HOP or another hop.
+                readPos += chunkFrames;
+            } // end per-chunk loop
+
+            // Write concatenated pv result
+            string pv_outname = string(outdir) + "/pv_out_s" + to_string((int)lroundf(s * 100.0f)) + ".wav";
+            writeStereoWav_i16_interleaved(pv_outname, wav.sampleRate, pv_concat.data(), (uint32_t)(pv_concat.size() / NUM_CHANNELS));
+            cout << "Wrote " << pv_outname << " frames=" << (pv_concat.size() / NUM_CHANNELS) << "\n";
+
+            // Now resample the entire concatenated pv output by 's' to produce pitched result
             if (!rs.st)
             {
-                std::cerr << "Resampler not initialized; skipping resample for s=" << s << "\n";
+                cerr << "Resampler not initialized; skipping resample for s=" << s << "\n";
                 continue;
             }
 
-            // estimate output capacity conservatively
-            int outCapacityFrames = (int)std::ceil((double)out_L * std::max(1.0, (double)s)) + 1024;
-            std::vector<int16_t> rs_out((size_t)outCapacityFrames * (size_t)NUM_CHANNELS);
+            // conservative output capacity estimate
+            int inFrames_pv = (int)(pv_concat.size() / NUM_CHANNELS);
+            int outCapacityFrames = (int)ceil((double)inFrames_pv * max(1.0, (double)s)) + 1024;
+            vector<int16_t> rs_out((size_t)outCapacityFrames * NUM_CHANNELS);
 
-            int outFrames = time_stretch_process(rs, new_data, out_L, rs_out.data(), outCapacityFrames, s);
+            int outFrames = time_stretch_process(rs, pv_concat.data(), inFrames_pv, rs_out.data(), outCapacityFrames, s);
             if (outFrames <= 0)
             {
-                std::cerr << "time_stretch_process failed for s=" << s << "\n";
+                cerr << "time_stretch_process failed for s=" << s << "\n";
                 continue;
             }
 
-            std::string pitch_outname = std::string(outdir) + "/pv_resampled_" + std::to_string(static_cast<int>(s * 100)) + "pct.wav";
+            string pitch_outname = string(outdir) + "/pv_pitch_s" + to_string((int)lroundf(s * 100.0f)) + ".wav";
             writeStereoWav_i16_interleaved(pitch_outname, wav.sampleRate, rs_out.data(), (uint32_t)outFrames);
-            std::cout << "Wrote pitched output: " << pitch_outname << " frames=" << outFrames << "\n";
-        }
+            cout << "Wrote pitched file " << pitch_outname << " frames=" << outFrames << "\n";
+        } // end s sweep
 
         // cleanup
         time_stretch_destroy(rs);
 
-        // free/cleanup as settup_vocoder allocated (mirror its error path)
+        // free allocated stuff (mirror settup_vocoder allocations)
         if (new_data)
             free(new_data);
         if (omega)
@@ -155,12 +211,12 @@ int main(int argc, char **argv)
         if (Y)
             fftwf_free(Y);
 
-        std::cout << "Done.\n";
+        cout << "Done.\n";
         return 0;
     }
-    catch (const std::exception &e)
+    catch (const exception &e)
     {
-        std::cerr << "test_pv failed: " << e.what() << "\n";
+        cerr << "test_pv failed: " << e.what() << "\n";
         return 1;
     }
 }
