@@ -117,3 +117,67 @@ void deinterleave_stereo_i16(const int16_t *interleavedLR,
         right[i] = interleavedLR[2 * i + 1];
     }
 }
+
+// Minimal WAV writer: 16-bit PCM stereo interleaved
+static void writeStereoWav_i16_interleaved(
+    const std::string &filename,
+    uint32_t sampleRate,
+    const int16_t *interleavedLR,
+    uint32_t frames)
+{
+    if (!interleavedLR)
+        throw std::runtime_error("writeStereoWav: null buffer");
+
+    const uint16_t audioFormat = 1; // PCM
+    const uint16_t numChannels = 2;
+    const uint16_t bitsPerSample = 16;
+
+    const uint32_t blockAlign = numChannels * (bitsPerSample / 8); // 4
+    const uint32_t byteRate = sampleRate * blockAlign;
+    const uint32_t dataSize = frames * blockAlign;
+
+    const uint32_t riffSize = 4 /*WAVE*/ +
+                              8 + 16 /*fmt*/ +
+                              8 + dataSize /*data*/;
+
+    std::ofstream out(filename, std::ios::binary);
+    if (!out)
+        throw std::runtime_error("Failed to open output wav: " + filename);
+
+    // RIFF header
+    out.write("RIFF", 4);
+    out.write(reinterpret_cast<const char *>(&riffSize), 4);
+    out.write("WAVE", 4);
+
+    // fmt chunk
+    out.write("fmt ", 4);
+    uint32_t fmtSize = 16;
+    out.write(reinterpret_cast<const char *>(&fmtSize), 4);
+    out.write(reinterpret_cast<const char *>(&audioFormat), 2);
+    out.write(reinterpret_cast<const char *>(&numChannels), 2);
+    out.write(reinterpret_cast<const char *>(&sampleRate), 4);
+    out.write(reinterpret_cast<const char *>(&byteRate), 4);
+    out.write(reinterpret_cast<const char *>(&blockAlign), 2);
+    out.write(reinterpret_cast<const char *>(&bitsPerSample), 2);
+
+    // data chunk
+    out.write("data", 4);
+    out.write(reinterpret_cast<const char *>(&dataSize), 4);
+    out.write(reinterpret_cast<const char *>(interleavedLR), dataSize);
+
+    if (!out)
+        throw std::runtime_error("Failed while writing wav: " + filename);
+}
+
+static std::vector<int16_t> interleaveStereo(const StereoWavI16 &wav)
+{
+    if (wav.left.size() != wav.right.size())
+        throw std::runtime_error("interleaveStereo: L/R size mismatch");
+    std::vector<int16_t> out(wav.left.size() * 2);
+    for (size_t i = 0; i < wav.left.size(); ++i)
+    {
+        out[2 * i + 0] = wav.left[i];
+        out[2 * i + 1] = wav.right[i];
+    }
+    return out;
+}

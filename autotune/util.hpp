@@ -22,4 +22,12 @@ void deinterleave_stereo_i16(const int16_t *interleavedLR,
                              int16_t *right,
                              int frames);
 
+std::vector<int16_t> interleaveStereo(const StereoWavI16 &wav);
+
+void writeStereoWav_i16_interleaved(
+    const std::string &filename,
+    uint32_t sampleRate,
+    const int16_t *interleavedLR,
+    uint32_t frames);
+
 #endif
