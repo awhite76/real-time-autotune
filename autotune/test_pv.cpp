@@ -18,20 +18,6 @@
 
 using namespace std;
 
-static string make_outname(const string &inPath, const string &tag, float s)
-{
-    auto dot = inPath.find_last_of('.');
-    string stem = (dot == string::npos) ? inPath : inPath.substr(0, dot);
-    ostringstream ss;
-    ss << stem << "_" << tag << "_s" << fixed << setprecision(2) << s;
-    string name = ss.str();
-    for (char &c : name)
-        if (c == '.')
-            c = 'p';
-    name += ".wav";
-    return name;
-}
-
 int main(int argc, char **argv)
 {
     try
@@ -78,7 +64,7 @@ int main(int argc, char **argv)
         // If your settup_vocoder takes input_frames, pass chunkFrames to size buffers appropriately.
         // If your version does not take input_frames, call it as you normally do.
         int rc = settup_vocoder(&time_buf, &win, &ifft_buf, &omega, &out, &norm, &new_data, &prev_phase, &sum_phase,
-                                &X, &Y, chunkFrames, &num_windows, &Hs_alloc, &max_out_L, &p_r2c, &p_c2r);
+                                &X, &Y, &chunkFrames, &num_windows, &Hs_alloc, &max_out_L, &p_r2c, &p_c2r);
         if (rc != 0)
             throw runtime_error("settup_vocoder failed");
 
