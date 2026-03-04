@@ -368,7 +368,7 @@ int main(int argc, char **argv)
         deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
         float f0L = yinL.getPitch(left);
-        float cL = yinL.getProbability();
+        // float cL = yinL.getProbability();
 
         // float f0R = yinR.getPitch(right);
         // float cR = yinR.getProbability();
