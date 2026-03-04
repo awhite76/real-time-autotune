@@ -232,7 +232,7 @@ int main(int argc, char **argv)
     }
 
     /****************** Load .wav *********************/
-    StereoWavI16 wav = loadStereoWav_i16("../assets/journey_vocals_stereo.wav");
+    StereoWavI16 wav = loadStereoWav_i16("../assets/twinkletwinkle_vocals.wav");
 
     // If you want to ensure it matches your pipeline rate:
     if (wav.sampleRate != SAMPLE_RATE)
