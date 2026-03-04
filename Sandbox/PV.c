@@ -202,8 +202,8 @@ static int phase_vocoder(WavFile *w, float time_stretch) {
     const int16_t *pcm = (const int16_t*)w->data;
 
     /* Phase Vocoder parameters */
-    const int N  = 1024;   // FFT / window size
-    const int Ha = 256;    // analysis hop (75% overlap)
+    const int N  = 480;   // FFT / window size
+    const int Ha = 480/4;    // analysis hop (75% overlap)
     const int Hs = (int)lroundf((float)Ha * time_stretch); // synthesis hop
 
     const int K = N/2 + 1;
@@ -437,9 +437,11 @@ int main(int argc, char **argv) {
 
     print_info(&w);
 
-    phase_vocoder(&w, 0.5);
+    float time_stretch = 2.00;
 
-    w.fmt.sample_rate = w.fmt.sample_rate / 2;
+    phase_vocoder(&w, time_stretch);
+
+    w.fmt.sample_rate = w.fmt.sample_rate * time_stretch;
 
     if (save_wav_pcm(argv[2], &w) != 0) {
         fprintf(stderr, "Failed to save wav\n");
