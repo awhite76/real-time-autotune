@@ -429,10 +429,15 @@ int main(int argc, char **argv)
             time_stretch = vocalsBest / f0Best;
         }
 
+        if (time_stretch < 0.40f)
+            time_stretch = 0.40f;
+        else if (time_stretch > 2.5f)
+            time_stretch = 2.5f;
+
         if (print_count++ > 50)
         {
             print_count = 0;
-            cout << "Input pitch: " << f0L << "\nFile pitch: " << pitchTS.leftHz[curr_idx] << "\nTime stretch: " << time_stretch << endl;
+            cout << "Input pitch: " << f0Best << "\nFile pitch: " << vocalsBest << "\nTime stretch: " << time_stretch << endl;
         }
 
         /* Run phase vo */
