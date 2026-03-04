@@ -471,10 +471,10 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+        // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        float outf0L = yinL.getPitch(left);
-        float outcL = yinL.getProbability();
+        // float outf0L = yinL.getPitch(left);
+        // float outcL = yinL.getProbability();
 
         // float outf0R = yinR.getPitch(right);
         // float outcR = yinR.getProbability();
@@ -483,12 +483,12 @@ int main(int argc, char **argv)
         // float outcBest = (outcL >= outcR) ? outcL : outcR;
         // const char *outchBest = (outcL >= outcR) ? "L" : "R";
 
-        static int printCountdown = 0;
-        if (++printCountdown >= 10)
-        {
-            printCountdown = 0;
-            cerr << "rs out: f0=" << outf0L << " Hz conf=" << outcL << "\n";
-        }
+        // static int printCountdown = 0;
+        // if (++printCountdown >= 10)
+        // {
+        //     printCountdown = 0;
+        //     cerr << "rs out: f0=" << outf0L << " Hz conf=" << outcL << "\n";
+        // }
 
         // Playback PERIOD_FRAMES
         sent = 0;
