@@ -7,7 +7,7 @@ OBJS     := $(SRCS:.cpp=.o)
 TEST_RESAMPLE_SRCS := test_resample.cpp time_stretch.cpp util.cpp
 TEST_RESAMPLE_OBJS := $(TEST_RESAMPLE_SRCS:.cpp=.o)
 
-TEST_PV_SRCS := test_pv.cpp pv.cpp util.cpp
+TEST_PV_SRCS := test_pv.cpp pv.cpp util.cpp time_stretch.cpp
 TEST_PV_OBJS := $(TEST_PV_SRCS:.cpp=.o)
 
 CXXFLAGS ?= -g -O0 -std=c++17 -Wall -Wextra -Wpedantic
