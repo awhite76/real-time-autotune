@@ -376,7 +376,56 @@ int main(int argc, char **argv)
         // float time_stretch_L = pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
         // float time_stretch_R = pitchTS.rightHz[file_idx++ % max_file_idx] / f0R;
 
-        time_stretch = pitchTS.leftHz[file_idx++ % max_file_idx] < 0 || f0L < 0 ? 1.0f : pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
+        static float f0Best = 0.0f;
+        static int repeat_voice = 0;
+
+        if (f0L > 0.0f || f0R > 0.0f)
+        {
+            f0Best = (cL >= cR) ? f0L : f0R;
+            repeat_voice = 0;
+        }
+        else
+        {
+            // If no pitch detected, repeat the last known pitch for a few iterations before resetting
+            if (repeat_voice < 5)
+            {
+                repeat_voice++;
+            }
+            else
+            {
+                f0Best = 0.0f; // reset if no pitch for too long
+            }
+        }
+
+        static float vocalsBest = 0.0f;
+        static int repeat_vocals = 0;
+
+        if (pitchTS.leftHz[file_idx++ % max_file_idx] || pitchTS.rightHz[file_idx++ % max_file_idx])
+        {
+            vocalsBest = (pitchTS.leftConf[file_idx++ % max_file_idx] >= pitchTS.rightConf[file_idx++ % max_file_idx]) ? pitchTS.leftHz[file_idx++ % max_file_idx] : pitchTS.rightHz[file_idx++ % max_file_idx];
+            repeat_vocals = 0;
+        }
+        else
+        {
+            // If no pitch detected, repeat the last known pitch for a few iterations before resetting
+            if (repeat_vocals < 5)
+            {
+                repeat_vocals++;
+            }
+            else
+            {
+                vocalsBest = 0.0f; // reset if no pitch for too long
+            }
+        }
+
+        if (f0Best <= 0.0f || vocalsBest <= 0.0f)
+        {
+            time_stretch = 1.0f; // no change if we don't have a valid pitch
+        }
+        else
+        {
+            time_stretch = vocalsBest / f0Best;
+        }
 
         if (print_count++ > 50)
         {
@@ -415,27 +464,27 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-        // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
+        deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
 
-        // float f0L = yinL.getPitch(left);
-        // float cL = yinL.getProbability();
+        float f0L = yinL.getPitch(left);
+        float cL = yinL.getProbability();
 
-        // float f0R = yinR.getPitch(right);
-        // float cR = yinR.getProbability();
+        float f0R = yinR.getPitch(right);
+        float cR = yinR.getProbability();
 
-        // float f0Best = (cL >= cR) ? f0L : f0R;
-        // float cBest = (cL >= cR) ? cL : cR;
-        // const char *chBest = (cL >= cR) ? "L" : "R";
+        float f0Best = (cL >= cR) ? f0L : f0R;
+        float cBest = (cL >= cR) ? cL : cR;
+        const char *chBest = (cL >= cR) ? "L" : "R";
 
-        // static int printCountdown = 0;
-        // if (++printCountdown >= 10)
-        // {
-        //     printCountdown = 0;
-        //     if (f0Best > 0.0f)
-        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-        //     else
-        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        // }
+        static int printCountdown = 0;
+        if (++printCountdown >= 10)
+        {
+            printCountdown = 0;
+            if (f0Best > 0.0f)
+                cerr << "rs out best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
+            else
+                cerr << "rs out best(" << chBest << "): f0=none conf=" << cBest << "\n";
+        }
 
         // Playback PERIOD_FRAMES
         sent = 0;
