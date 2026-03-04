@@ -370,8 +370,8 @@ int main(int argc, char **argv)
         float f0L = yinL.getPitch(left);
         float cL = yinL.getProbability();
 
-        float f0R = yinR.getPitch(right);
-        float cR = yinR.getProbability();
+        // float f0R = yinR.getPitch(right);
+        // float cR = yinR.getProbability();
 
         // float time_stretch_L = pitchTS.leftHz[file_idx++ % max_file_idx] / f0L;
         // float time_stretch_R = pitchTS.rightHz[file_idx++ % max_file_idx] / f0R;
@@ -379,9 +379,9 @@ int main(int argc, char **argv)
         static float f0Best = 0.0f;
         static int repeat_voice = 0;
 
-        if (f0L > 0.0f || f0R > 0.0f)
+        if (f0L > 0.0f /*&& f0R > 0.0f*/)
         {
-            f0Best = (cL >= cR) ? f0L : f0R;
+            f0Best = f0L; // (cL >= cR) ? f0L : f0R;
             repeat_voice = 0;
         }
         else
@@ -476,21 +476,18 @@ int main(int argc, char **argv)
         float outf0L = yinL.getPitch(left);
         float outcL = yinL.getProbability();
 
-        float outf0R = yinR.getPitch(right);
-        float outcR = yinR.getProbability();
+        // float outf0R = yinR.getPitch(right);
+        // float outcR = yinR.getProbability();
 
-        float outf0Best = (outcL >= outcR) ? outf0L : outf0R;
-        float outcBest = (outcL >= outcR) ? outcL : outcR;
-        const char *outchBest = (outcL >= outcR) ? "L" : "R";
+        // float outf0Best = (outcL >= outcR) ? outf0L : outf0R;
+        // float outcBest = (outcL >= outcR) ? outcL : outcR;
+        // const char *outchBest = (outcL >= outcR) ? "L" : "R";
 
         static int printCountdown = 0;
         if (++printCountdown >= 10)
         {
             printCountdown = 0;
-            if (f0Best > 0.0f)
-                cerr << "rs out best(" << outchBest << "): f0=" << outf0Best << " Hz conf=" << outcBest << "\n";
-            else
-                cerr << "rs out best(" << outchBest << "): f0=none conf=" << outcBest << "\n";
+            cerr << "rs out: f0=" << outf0L << " Hz conf=" << outcL << "\n";
         }
 
         // Playback PERIOD_FRAMES
