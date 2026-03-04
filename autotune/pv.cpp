@@ -175,10 +175,6 @@ int phase_vocoder(int16_t *pcm, float *time_buf, float *win, float *ifft_buf, fl
     {
         time_stretch = MAX_TIME_STRETCH;
     }
-
-    if (time_stretch < 0.25)
-        time_stretch = 0.25;
-
     int Hs = (int)lroundf(ANALYSIS_HOP * time_stretch);
     *out_L = (num_windows - 1) * (Hs) + WINDOW_SIZE;
 

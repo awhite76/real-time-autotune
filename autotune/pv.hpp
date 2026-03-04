@@ -12,46 +12,43 @@
 #define NUM_CHANNELS 2
 #define SAMPLING_RATE 48000
 #define FRAME_BYTES 4
-#define NUM_FRAMES BUFFER_FRAMES /* VERIFY THIS */
+#define NUM_FRAMES BUFFER_FRAMES / 2
 
 /* PV Params */
-#define WINDOW_SIZE  480
-#define ANALYSIS_HOP ((WINDOW_SIZE)/4)
-#define FREQ_BINS (1 + WINDOW_SIZE/2) 
+#define WINDOW_SIZE 480
+#define ANALYSIS_HOP ((WINDOW_SIZE) / 4)
+#define FREQ_BINS (1 + WINDOW_SIZE / 2)
 
-typedef struct {
-    int N;              // FFT size / window length
-    int H;              // hop size
-    int num_frames;     // number of time frames
-    float *window;      // length N
-    float *time_buf;    // length N (input frame buffer)
-    fftwf_complex *spec;// length num_frames * (N/2+1)
-    fftwf_plan plan;    // r2c plan on time_buf -> temp_out
+typedef struct
+{
+    int N;                   // FFT size / window length
+    int H;                   // hop size
+    int num_frames;          // number of time frames
+    float *window;           // length N
+    float *time_buf;         // length N (input frame buffer)
+    fftwf_complex *spec;     // length num_frames * (N/2+1)
+    fftwf_plan plan;         // r2c plan on time_buf -> temp_out
     fftwf_complex *temp_out; // length (N/2+1)
 } STFT;
 
-int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega, 
-                    float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase, 
-                    fftwf_complex **X, fftwf_complex **Y, int* num_windows, int* Hs, 
-                    int* out_L, fftwf_plan* p_r2c, fftwf_plan* p_c2r);
+int settup_vocoder(float **time_buf, float **win, float **ifft_buf, float **omega,
+                   float **out, float **norm, int16_t **new_data, float **prev_phase, float **sum_phase,
+                   fftwf_complex **X, fftwf_complex **Y, int *num_windows, int *Hs,
+                   int *out_L, fftwf_plan *p_r2c, fftwf_plan *p_c2r);
 
-int phase_vocoder(int16_t* pcm, float *time_buf, float *win, float *ifft_buf, float* omega, 
-                  float *out, float *norm, int16_t *new_data, float* prev_phase, float*  sum_phase, fftwf_complex *X, fftwf_complex *Y, 
-                  float time_stretch, int *out_L, int num_windows, fftwf_plan p_r2c, fftwf_plan p_c2r) ;
+int phase_vocoder(int16_t *pcm, float *time_buf, float *win, float *ifft_buf, float *omega,
+                  float *out, float *norm, int16_t *new_data, float *prev_phase, float *sum_phase, fftwf_complex *X, fftwf_complex *Y,
+                  float time_stretch, int *out_L, int num_windows, fftwf_plan p_r2c, fftwf_plan p_c2r);
 
-
-
-
-
-//float win[]
-//float *time_buf, 
-//float *ifft_buf, 
-//fftwf_complex *X, 
-//fftwf_complex *Y, 
-//float *out, 
-//float *norm,
-//float *prev_phase, 
-//float *sum_phase
-//float *omega
+// float win[]
+// float *time_buf,
+// float *ifft_buf,
+// fftwf_complex *X,
+// fftwf_complex *Y,
+// float *out,
+// float *norm,
+// float *prev_phase,
+// float *sum_phase
+// float *omega
 
 #endif

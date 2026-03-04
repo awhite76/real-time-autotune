@@ -6,11 +6,11 @@
 #include <string>
 #include <algorithm>
 
-#define T_MS 10
+#define T_MS 20
 #define SAMPLE_RATE 48000
 #define CHANNELS 2
 #define PERIOD_FRAMES (SAMPLE_RATE * T_MS / 1000)
-#define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS * 2)
+#define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS * 4)
 
 using namespace std;
 
