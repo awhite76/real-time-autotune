@@ -12,22 +12,6 @@
 #include "util.hpp"         // loadStereoWav_i16
 #include "time_stretch.hpp" // TimeStretchResampler + time_stretch_*
 
-static std::string makeOutName(const std::string &inPath, float s)
-{
-    // e.g. input.wav -> input_s0p40.wav (replace '.' with 'p' for filesystem friendliness)
-    auto dot = inPath.find_last_of('.');
-    std::string stem = (dot == std::string::npos) ? inPath : inPath.substr(0, dot);
-
-    std::ostringstream ss;
-    ss << stem << "_s" << std::fixed << std::setprecision(2) << s;
-    std::string name = ss.str();
-    for (char &c : name)
-        if (c == '.')
-            c = 'p';
-    name += ".wav";
-    return name;
-}
-
 void test_resample(const std::string &inputWavPath)
 {
     StereoWavI16 wav = loadStereoWav_i16(inputWavPath);
@@ -69,7 +53,7 @@ void test_resample(const std::string &inputWavPath)
             continue;
         }
 
-        std::string outName = makeOutName(inputWavPath, s);
+        std::string outName = "../out/resampled_" + std::to_string(static_cast<int>(s * 100)) + "pct.wav";
         writeStereoWav_i16_interleaved(
             outName,
             wav.sampleRate,
