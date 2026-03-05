@@ -318,14 +318,14 @@ size_t pv_process_ready(PhaseVocoder pv, int16_t *out, size_t out_cap)
         if (produced + (size_t)Hs > out_cap)
             break;
 
-        uint64_t out_free = _ring_free(pv->stretched_out_read,
-                                       pv->stretched_out_write,
-                                       pv->stretched_length);
-        if (out_free < (uint64_t)WINDOW_SIZE)
-        {
-            // Not enough room to safely write the next iFFT frame.
-            break;
-        }
+        // uint64_t out_free = _ring_free(pv->stretched_out_read,
+        //                                pv->stretched_out_write,
+        //                                pv->stretched_length);
+        // if (out_free < (uint64_t)WINDOW_SIZE)
+        // {
+        //     // Not enough room to safely write the next iFFT frame.
+        //     break;
+        // }
         phase_vocoder(pv);
         pv_consume_output(pv, out + produced, (size_t)Hs);
         produced += (size_t)Hs;
