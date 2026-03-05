@@ -157,7 +157,10 @@ void phase_vocoder(PhaseVocoder pv) {
     fftwf_execute(p_r2c);
     for (int k = 0; k < FREQ_BINS; k++) {
         const float re = X[k][0];
-        const float im = X[k][1];
+        float im = X[k][1];
+        if(k == 0 || k == FREQ_BINS - 1) {
+            im = 0;
+        }
         const float mag = sqrtf(re*re + im*im);
         const float phase = atan2f(im, re);
         if (pv->first_time) {
@@ -171,6 +174,7 @@ void phase_vocoder(PhaseVocoder pv) {
             float true_freq = omega[k] + dphi / (float)ANALYSIS_HOP;
             // accumulate synthesis phase
             sum[k] += true_freq * (float)Hs;
+            sum[k] = _princargf(sum[k]);
             prev[k] = phase;
         
         }
@@ -203,7 +207,7 @@ size_t pv_push_input(PhaseVocoder pv, const int16_t* buffer, size_t count) {
 
     size_t written = 0;
     while (written < count) {
-        uint64_t free = ring_free(input_read, input_write, input_length);
+        uint64_t free = _ring_free(input_read, input_write, input_length);
         if (free == 0) break;
         pv->input[input_write] = buffer[written];
         input_write = (input_write + 1) % input_length;
@@ -217,11 +221,12 @@ size_t pv_push_input(PhaseVocoder pv, const int16_t* buffer, size_t count) {
 void pv_consume_output(PhaseVocoder pv, int16_t* out, size_t count) {
     constexpr float EPS = 1e-12f;
 
-    uint64_t stretched_read_pointer = pv->stretched_out_read;
+    uint64_t stretched_out_read = pv->stretched_out_read;
     const uint64_t stretched_length = pv->stretched_length;
 
+
     for (size_t i = 0; i < count; i++) {
-        const uint64_t idx = stretched_read_pointer;
+        const uint64_t idx = stretched_out_read;
 
         const float nrm = pv->norm[idx];
         float y = 0.0f;
@@ -240,17 +245,17 @@ void pv_consume_output(PhaseVocoder pv, int16_t* out, size_t count) {
         if (q >  32767) q =  32767;
         out[i] = (int16_t)q;
 
-        stretched_read_pointer = (stretched_read_pointer + 1) % stretched_length;
+        stretched_out_read = (stretched_out_read + 1) % stretched_length;
     }
 
-    pv->stretched_out_read = stretched_read_pointer;
+    pv->stretched_out_read = stretched_out_read;
 }
 
 size_t pv_process_ready(PhaseVocoder pv, int16_t* out, size_t out_cap) {
     size_t produced = 0;
     uint64_t input_length = pv->input_length;
 
-    while ((ring_used(pv->input_read, pv->input_write, input_length)) >= (uint64_t)WINDOW_SIZE) {
+    while (_ring_used(pv->input_read, pv->input_write, input_length) >= (uint64_t)WINDOW_SIZE) {
         int Hs = (int)lroundf((float)ANALYSIS_HOP * pv->time_stretch);
         if (Hs <= 0) break;
 
