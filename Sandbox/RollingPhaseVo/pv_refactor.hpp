@@ -65,7 +65,7 @@ void pv_consume_output(PhaseVocoder pv, int16_t* out, size_t count);
 size_t pv_push_input(PhaseVocoder pv, const int16_t* buffer, size_t count); 
 
 #define WINDOW_SIZE 1024
-#define ANALYSIS_HOP WINDOW_SIZE/4
+#define ANALYSIS_HOP 256
 #define FREQ_BINS (1 + WINDOW_SIZE/2) 
 
 #endif
