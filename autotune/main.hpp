@@ -4,6 +4,10 @@
 #include <cstring>
 #include <string>
 
+#include "pitch.hpp"
+#include "time_stretch.hpp"
+#include "pv.hpp"
+
 #define T_MS 10
 #define SAMPLE_RATE 48000
 #define CHANNELS 2
@@ -11,6 +15,7 @@
 #define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS * 2)
 
 using namespace std;
+
 
 bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream);
 int xrun_recover(snd_pcm_t *handle, int err);
