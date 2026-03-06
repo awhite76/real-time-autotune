@@ -281,9 +281,12 @@ size_t pv_push_input(PhaseVocoder pv, const int16_t *buffer, size_t count)
     const uint64_t input_length = pv->input_length;
 
     size_t written = 0;
+    printf("Before push while");
     while (written < count)
     {
         uint64_t free = _ring_free(input_read, input_write, input_length);
+        printf( "FREE: %llu\n", 0);
+        
         if (free == 0)
             break;
         pv->input[input_write] = buffer[written];
