@@ -274,14 +274,17 @@ int main(int argc, char **argv)
 
         /* Deinterleaven channels */
         deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
+        static int written = 0;
 
         /* Push input into */
         printf("pushing input\n");
         size_t wrote = pv_push_input(pv, left, PERIOD_FRAMES);
+        written += wrote;
         size_t processed = 0;
         printf("Wrote %ld\n", wrote);
         if(wrote > WINDOW_SIZE) {
             printf("wrote more than window size\n");
+            written = 0;
             processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
         }
 
