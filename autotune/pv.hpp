@@ -1,5 +1,5 @@
-#ifndef RPV_H
-#define RPV_H
+#ifndef PV_H
+#define PV_H
 
 #include <fftw3.h>
 #include <stdint.h>

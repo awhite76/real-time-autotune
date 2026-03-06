@@ -198,8 +198,8 @@ int main(int argc, char **argv)
 
     /************** Phase Vocoder Init ******************/
     struct PhaseVocoder_st pv_st;
-    PhaseVocoder pv = &pv_st
-    int vocoder_success = setup_vocoder(&pv);
+    PhaseVocoder pv = &pv_st;
+    int vocoder_success = setup_vocoder(pv);
     if(vocoder_success < 0) {
         return 1;
     }
@@ -233,6 +233,7 @@ int main(int argc, char **argv)
 
     /* Hard code for now, variable later */
     pv->time_stretch = 2.0;
+    float time_stretch = pv->time_stretch;
 
     while (true)
     {
