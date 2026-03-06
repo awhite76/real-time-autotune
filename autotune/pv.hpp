@@ -33,32 +33,6 @@ typedef struct PhaseVocoder_st {
     fftwf_plan p_c2r;                // iFFT plan
 } *PhaseVocoder;
 
-static float _princargf(float x) {
-    x = fmodf(x + (float)M_PI, 2.0f * (float)M_PI);
-    if (x < 0) x += 2.0f * (float)M_PI;
-    return x - (float)M_PI;
-}
-
-static void _hann_window(float *w, int N) {
-    // periodic Hann: w[n] = 0.5 - 0.5*cos(2*pi*n/N)
-    // (good for overlap-add with H=N/4 or H=N/2 depending)
-    const float two_pi = 2.0f * (float)M_PI;
-    for (int n = 0; n < N; n++) {
-        w[n] = 0.5f - 0.5f * cosf(two_pi * (float)n / (float)N);
-    }
-}
-
-// Used space
-static inline uint64_t _ring_used(uint64_t read_pointer, uint64_t write_pointer, uint64_t ring_length) {
-    return (write_pointer + ring_length - read_pointer) % ring_length;
-}
-
-// free space
-static inline uint64_t _ring_free(uint64_t read_pointer, uint64_t write_pointer, uint64_t ring_length) {
-    return (ring_length - 1) - _ring_used(read_pointer, write_pointer, ring_length);
-}
-
-
 int setup_vocoder(PhaseVocoder pv);
 void cleanup_vocoder(PhaseVocoder pv);
 size_t pv_process_ready(PhaseVocoder pv, int16_t* out, size_t out_cap);
