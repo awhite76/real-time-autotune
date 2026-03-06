@@ -279,13 +279,13 @@ int main(int argc, char **argv)
         printf("pushing input\n");
         size_t wrote = pv_push_input(pv, left, PERIOD_FRAMES);
         size_t processed = 0;
-        printf("Wrote %d\n", wrote);
+        printf("Wrote %ld\n", wrote);
         if(wrote > WINDOW_SIZE) {
             printf("wrote more than window size\n");
             processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
         }
 
-        printf("Processed %d\n", processed);
+        printf("Processed %ld\n", processed);
         /**************** Yin pitch detection ***************/
         // float f0L = yinL.getPitch(left);
         // float cL = yinL.getProbability();
