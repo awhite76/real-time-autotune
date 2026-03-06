@@ -289,7 +289,7 @@ size_t pv_push_input(PhaseVocoder pv, const int16_t *buffer, size_t count)
     while (written < count)
     {
         uint64_t free = _ring_free(input_read, input_write, input_length);
-        printf( "FREE: %lu\n", 0);
+        printf( "FREE: %lu\n", free);
         
         if (free == 0)
             break;
