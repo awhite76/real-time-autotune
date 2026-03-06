@@ -253,6 +253,7 @@ int main(int argc, char **argv)
         rcvd = 0;
         while (rcvd < PERIOD_FRAMES)
         {
+            printf("Reading\n");
 
             snd_pcm_sframes_t r = snd_pcm_readi(
                 capture_handle,
@@ -275,12 +276,16 @@ int main(int argc, char **argv)
         deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
         /* Push input into */
+        printf("pushing input\n");
         size_t wrote = pv_push_input(pv, left, PERIOD_FRAMES);
         size_t processed = 0;
+        printf("Wrote %d\n", wrote);
         if(wrote > WINDOW_SIZE) {
+            printf("wrote more than window size\n");
             processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
         }
 
+        printf("Processed %d\n", processed);
         /**************** Yin pitch detection ***************/
         // float f0L = yinL.getPitch(left);
         // float cL = yinL.getProbability();
@@ -302,8 +307,11 @@ int main(int argc, char **argv)
         //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         // }
         if(processed < PERIOD_FRAMES * time_stretch) {
+            printf("Didn't process enough\n");
             continue;
         }
+
+        printf("Trying time_stretch\n");
 
 
         int outFrames = time_stretch_process(
