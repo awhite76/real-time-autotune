@@ -12,6 +12,18 @@ static void deinterleave_stereo_i16(const int16_t *interleavedLR,
     }
 }
 
+static void reinterleave_stereo_i16(const int16_t *left,
+                                    const int16_t *right,
+                                    int16_t *interleavedLR,
+                                    int frames)
+{
+    for (int i = 0; i < frames; ++i)
+    {
+        interleavedLR[2 * i + 0] = left[i];
+        interleavedLR[2 * i + 1] = right[i];
+    }
+}
+
 int xrun_recover(snd_pcm_t *handle, int err)
 {
     if (err == -EPIPE)
@@ -194,7 +206,7 @@ int main(int argc, char **argv)
     TimeStretchResampler rs;
     time_stretch_init(rs, SAMPLE_RATE, 5);
     static int16_t rs_in[PERIOD_FRAMES];
-    static int16_t rs_out[BUFFER_FRAMES];
+    static int16_t rs_out[PERIOD_FRAMES];
 
     /************** Phase Vocoder Init ******************/
     struct PhaseVocoder_st pv_st;
@@ -263,8 +275,11 @@ int main(int argc, char **argv)
         deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
         /* Push input into */
-        size_t wrote = pv_push_input(pv,left, PERIOD_FRAMES);
-        size_t processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
+        size_t wrote = pv_push_input(pv, left, PERIOD_FRAMES);
+        size_t processed = 0;
+        if(wrote > WINDOW_SIZE) {
+            processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
+        }
 
         /**************** Yin pitch detection ***************/
         // float f0L = yinL.getPitch(left);
@@ -286,7 +301,9 @@ int main(int argc, char **argv)
         //     else
         //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         // }
-
+        if(processed < PERIOD_FRAMES * time_stretch) {
+            continue;
+        }
 
 
         int outFrames = time_stretch_process(
@@ -334,13 +351,15 @@ int main(int argc, char **argv)
         //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         // }
 
+        reinterleave_stereo_i16(rs_in, rs_in, buffer, PERIOD_FRAMES);
+
         // Playback PERIOD_FRAMES
         sent = 0;
         while (sent < PERIOD_FRAMES)
         {
             snd_pcm_sframes_t w = snd_pcm_writei(
                 playback_handle,
-                rs_out + sent * CHANNELS,
+                buffer + sent * CHANNELS,
                 PERIOD_FRAMES - sent);
             if (w < 0)
             {

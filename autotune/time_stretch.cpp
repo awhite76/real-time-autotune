@@ -11,9 +11,8 @@ bool time_stretch_init(TimeStretchResampler &r,
     r.sampleRate = sampleRate;
     r.last_s = -1.0f;
 
-    // mono: 1 channel
     r.st = speex_resampler_init(
-        CHANNELS,   // channels
+        1,   // channels
         sampleRate, // in rate
         sampleRate, // out rate (we'll change ratio dynamically)
         quality,    // 0..10
