@@ -282,10 +282,10 @@ int main(int argc, char **argv)
         written += wrote;
         size_t processed = 0;
         printf("Wrote %ld\n", wrote);
-        if(wrote > WINDOW_SIZE) {
+        if(written > WINDOW_SIZE) {
             printf("wrote more than window size\n");
-            written = 0;
             processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
+            written -= processed;
         }
 
         printf("Processed %ld\n", processed);
