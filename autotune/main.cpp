@@ -197,7 +197,8 @@ int main(int argc, char **argv)
     static int16_t rs_out[BUFFER_FRAMES];
 
     /************** Phase Vocoder Init ******************/
-    struct PhaseVocoder_st pv;
+    struct PhaseVocoder_st pv_st;
+    PhaseVocoder pv = &pv_st
     int vocoder_success = setup_vocoder(&pv);
     if(vocoder_success < 0) {
         return 1;
