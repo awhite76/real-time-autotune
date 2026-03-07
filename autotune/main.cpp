@@ -299,9 +299,9 @@ int main(int argc, char **argv)
             continue;
         }
 
-        procesed_count = 0;
+        processed_count = 0;
 
-        printf("Processed %ld\n", processed);
+        printf("Processed %d\n", processed);
         /**************** Yin pitch detection ***************/
         // float f0L = yinL.getPitch(left);
         // float cL = yinL.getProbability();
@@ -329,7 +329,7 @@ int main(int argc, char **argv)
         int outFrames = time_stretch_process(
             rs,
             rs_in,
-            processed, // frames per channel available in new_data
+            processed_count, // frames per channel available in new_data
             rs_out,
             PERIOD_FRAMES, // we want exactly one period for ALSA
             time_stretch); // ratio
