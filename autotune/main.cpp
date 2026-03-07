@@ -205,7 +205,7 @@ int main(int argc, char **argv)
     /************* Time stretch config *************/
     TimeStretchResampler rs;
     time_stretch_init(rs, SAMPLE_RATE, 5);
-    static int16_t rs_in[PERIOD_FRAMES];
+    static int16_t rs_in[PERIOD_FRAMES * 3];
     static int16_t rs_out[PERIOD_FRAMES];
 
     /************** Phase Vocoder Init ******************/
@@ -279,14 +279,27 @@ int main(int argc, char **argv)
         /* Push input into */
         printf("pushing input\n");
         size_t wrote = pv_push_input(pv, left, PERIOD_FRAMES);
-        written += wrote;
-        size_t processed = 0;
-        printf("Wrote %ld\n", wrote);
-        if(written > WINDOW_SIZE) {
-            printf("wrote more than window size\n");
-            processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
-            written -= processed;
+        // written += wrote;
+        // size_t processed = 0;
+        // printf("Wrote %ld\n", wrote);
+        // if(written > WINDOW_SIZE) {
+        //     printf("wrote more than window size\n");
+        //     processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
+        //     written -= processed;
+        // }
+
+        int Hs = (int)lroundf((float)ANALYSIS_HOP * pv->time_stretch);
+
+        static int processed_count = 0;
+        int processed = pv_process_ready(pv, rs_in + processed_count, Hs);
+        processed_count += processed;
+
+        if(processed_count < PERIOD_FRAMES * time_stretch) {
+            printf("Didn't process enough\n");
+            continue;
         }
+
+        procesed_count = 0;
 
         printf("Processed %ld\n", processed);
         /**************** Yin pitch detection ***************/
@@ -309,10 +322,6 @@ int main(int argc, char **argv)
         //     else
         //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         // }
-        if(processed < PERIOD_FRAMES * time_stretch) {
-            printf("Didn't process enough\n");
-            continue;
-        }
 
         printf("Trying time_stretch\n");
 

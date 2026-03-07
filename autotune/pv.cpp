@@ -320,7 +320,7 @@ void pv_consume_output(PhaseVocoder pv, int16_t *out, size_t count)
             y = pv->stretched[idx] / nrm;
         }
 
-        // clear after read (critical!)
+        // clear after read
         pv->stretched[idx] = 0.0f;
         pv->norm[idx] = 0.0f;
 
