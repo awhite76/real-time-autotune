@@ -253,7 +253,6 @@ int main(int argc, char **argv)
         rcvd = 0;
         while (rcvd < PERIOD_FRAMES)
         {
-            printf("Reading\n");
 
             snd_pcm_sframes_t r = snd_pcm_readi(
                 capture_handle,
@@ -277,7 +276,6 @@ int main(int argc, char **argv)
         static int written = 0;
 
         /* Push input into */
-        printf("pushing input\n");
         size_t wrote = pv_push_input(pv, left, PERIOD_FRAMES);
         // written += wrote;
         // size_t processed = 0;
@@ -303,7 +301,6 @@ int main(int argc, char **argv)
         }
 
         if(processed_count < target && !(room < target)) {
-            printf("Didn't process enough\n");
             continue;
         }
 
