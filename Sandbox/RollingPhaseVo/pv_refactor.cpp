@@ -10,7 +10,7 @@ int setup_vocoder(PhaseVocoder pv)
 
     // Ring sizes
     pv->input_length = (uint64_t)(8u * (uint64_t)WINDOW_SIZE);
-    pv->stretched_length = (uint64_t)(64u * (uint64_t)WINDOW_SIZE);
+    pv->stretched_length = (uint64_t)(128u * (uint64_t)WINDOW_SIZE);
     pv->norm_length = pv->stretched_length;
 
     // ---- FFT / time buffers ----
