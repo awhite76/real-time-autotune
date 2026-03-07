@@ -290,15 +290,22 @@ int main(int argc, char **argv)
 
         int Hs = (int)lroundf((float)ANALYSIS_HOP * pv->time_stretch);
 
-        static int processed_count = 0;
-        int processed = pv_process_ready(pv, rs_in + processed_count, Hs);
-        processed_count += processed;
+        int target = PERIOD_FRAMES * time_stretch;
 
-        if(processed_count < PERIOD_FRAMES * time_stretch) {
+        static int processed_count = 0;
+        while(proceseed_count < target) {
+            int room = PERIOD_FRAMES - proceseed_count;
+            int processed = pv_process_ready(pv, rs_in + processed_count, room);
+            if(processed == 0) break;
+            proceseed_count += processed;
+
+        }
+
+        if(processed_count < target ) {
             printf("Didn't process enough\n");
             continue;
         }
-        printf("Processed %d\n", processed);
+
         /**************** Yin pitch detection ***************/
         // float f0L = yinL.getPitch(left);
         // float cL = yinL.getProbability();
@@ -319,8 +326,6 @@ int main(int argc, char **argv)
         //     else
         //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         // }
-
-        printf("Trying time_stretch\n");
 
 
         int outFrames = time_stretch_process(
