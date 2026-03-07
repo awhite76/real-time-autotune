@@ -290,14 +290,14 @@ int main(int argc, char **argv)
 
         int Hs = (int)lroundf((float)ANALYSIS_HOP * pv->time_stretch);
 
-        int target = PERIOD_FRAMES * time_stretch;
+        int target =PERIOD_FRAMES * time_stretch;
 
         static int processed_count = 0;
-        while(proceseed_count < target) {
-            int room = PERIOD_FRAMES - proceseed_count;
+        while(processed_count < target) {
+            int room = PERIOD_FRAMES - processed_count;
             int processed = pv_process_ready(pv, rs_in + processed_count, room);
             if(processed == 0) break;
-            proceseed_count += processed;
+            processed_count += processed;
 
         }
 
