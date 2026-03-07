@@ -298,9 +298,6 @@ int main(int argc, char **argv)
             printf("Didn't process enough\n");
             continue;
         }
-
-        processed_count = 0;
-
         printf("Processed %d\n", processed);
         /**************** Yin pitch detection ***************/
         // float f0L = yinL.getPitch(left);
@@ -372,6 +369,7 @@ int main(int argc, char **argv)
         // }
 
         reinterleave_stereo_i16(rs_in, rs_in, buffer, PERIOD_FRAMES);
+        processed_count = 0;
 
         // Playback PERIOD_FRAMES
         sent = 0;
