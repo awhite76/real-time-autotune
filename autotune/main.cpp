@@ -293,15 +293,16 @@ int main(int argc, char **argv)
         int target =PERIOD_FRAMES * time_stretch;
 
         static int processed_count = 0;
+        int room = 0;
         while(processed_count < target) {
-            int room = PERIOD_FRAMES - processed_count;
+            room = PERIOD_FRAMES - processed_count;
             int processed = pv_process_ready(pv, rs_in + processed_count, room);
             if(processed == 0) break;
             processed_count += processed;
 
         }
 
-        if(processed_count < target ) {
+        if(processed_count < target && !(room < target)) {
             printf("Didn't process enough\n");
             continue;
         }
