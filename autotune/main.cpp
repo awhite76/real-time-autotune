@@ -244,7 +244,7 @@ int main(int argc, char **argv)
     snd_pcm_sframes_t rcvd = 0;
 
     /* Hard code for now, variable later */
-    pv->time_stretch = 2.0;
+    pv->time_stretch = 1.5;
     float time_stretch = pv->time_stretch;
 
     while (true)
@@ -371,7 +371,7 @@ int main(int argc, char **argv)
         //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         // }
 
-        reinterleave_stereo_i16(rs_in, rs_in, buffer, PERIOD_FRAMES);
+        reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
         processed_count = 0;
 
         // Playback PERIOD_FRAMES
