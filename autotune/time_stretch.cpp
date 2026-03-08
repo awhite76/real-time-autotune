@@ -31,13 +31,14 @@ void time_stretch_destroy(TimeStretchResampler &r)
     r.last_s = -1.0f;
 }
 
-int time_stretch_process(TimeStretchResampler &r,
+struct TimeStretchResults time_stretch_process(TimeStretchResampler &r,
                          const int16_t *input,
                          int inFrames, // frames per channel
                          int16_t *output,
                          int outCapacity, // frames per channel
                          float s)
 {
+    struct TimeStretchResults results;
     if (!r.st || !input || !output ||
         inFrames <= 0 || outCapacity <= 0 || s <= 0.0f)
         return 0;
@@ -73,8 +74,11 @@ int time_stretch_process(TimeStretchResampler &r,
         output,
         &outLen);
 
+    results.consumed = inLen;
+    results.produced = outLen;
+
     if (err != RESAMPLER_ERR_SUCCESS)
         return 0;
 
-    return (int)outLen; // frames per channel
+    return results;
 }

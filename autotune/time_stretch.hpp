@@ -11,6 +11,12 @@ struct TimeStretchResampler
     float last_s = -1.0f; // cache last ratio to avoid reconfig every call
 };
 
+struct TimeStretchResults 
+{
+    int produced;
+    int consumed;
+}
+
 /**
  * Initialize SpeexDSP resampler for interleaved multi-channel audio.
  *

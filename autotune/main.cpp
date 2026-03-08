@@ -206,6 +206,9 @@ int main(int argc, char **argv)
     TimeStretchResampler rs;
     time_stretch_init(rs, SAMPLE_RATE, 5);
     static int16_t rs_in[PERIOD_FRAMES * 3];
+    static int16_t tmp[PERIOD_FRAMES * 3];
+    const int tmp_size = PERIOD_FRAMES * 3;
+    const int rs_in_size = PERIOD_FRAMES * 3;
     static int16_t rs_out[PERIOD_FRAMES];
 
     /************** Phase Vocoder Init ******************/
@@ -247,6 +250,11 @@ int main(int argc, char **argv)
     pv->time_stretch = 1.5;
     float time_stretch = pv->time_stretch;
 
+    constexpr uint32_t FIFO_CAP = 8 * WINDOW_SIZE + 1;
+    static int16_t fifo_mem[FIFO_CAP];
+    RingI16 fifo;
+    fifo.init(fifo_mem, FIFO_CAP);
+
     while (true)
     {
         // Capture PERIOD_FRAMES
@@ -271,39 +279,6 @@ int main(int argc, char **argv)
             rcvd += r;
         }
 
-        /* Deinterleaven channels */
-        deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
-        static int written = 0;
-
-        /* Push input into */
-        size_t wrote = pv_push_input(pv, left, PERIOD_FRAMES);
-        // written += wrote;
-        // size_t processed = 0;
-        // printf("Wrote %ld\n", wrote);
-        // if(written > WINDOW_SIZE) {
-        //     printf("wrote more than window size\n");
-        //     processed = pv_process_ready(pv, rs_in, PERIOD_FRAMES * time_stretch);
-        //     written -= processed;
-        // }
-
-        int Hs = (int)lroundf((float)ANALYSIS_HOP * pv->time_stretch);
-
-        int target =PERIOD_FRAMES * time_stretch;
-
-        static int processed_count = 0;
-        int room = 0;
-        while(processed_count < target) {
-            room = PERIOD_FRAMES - processed_count;
-            int processed = pv_process_ready(pv, rs_in + processed_count, room);
-            if(processed == 0) break;
-            processed_count += processed;
-
-        }
-
-        if(processed_count < target && !(room < target)) {
-            continue;
-        }
-
         /**************** Yin pitch detection ***************/
         // float f0L = yinL.getPitch(left);
         // float cL = yinL.getProbability();
@@ -325,16 +300,44 @@ int main(int argc, char **argv)
         //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
         // }
 
+        /* Deinterleaven channels */
+        deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
 
-        int outFrames = time_stretch_process(
+        /* We process left channel only for now. Later add right when whole thing works */
+        size_t pos = 0;
+        while (pos < PERIOD_FRAMES) {
+
+            size_t wrote = pv_push_input(pv, left + pos, PERIOD_FRAMES - pos);
+            pos += wrote;
+
+            if(pos == PERIOD_FRAMES) break;
+            for (;;) {
+                size_t produced = pv_process_ready(pv, tmp, tmp_size);
+                if (produced == 0) break;
+
+                uint32_t pushed = fifo.push(tmp, (uint32_t)produced);
+            }       
+        }
+
+        for (;;) {
+            size_t produced = pv_process_ready(pv, tmp, tmp_size);
+            if (produced == 0) break;
+            fifo.push(tmp, (uint32_t)produced);
+        }
+
+        int available = fifo.peek(rs_in, rs_in_size);
+
+        struct TimeStretchResults results = time_stretch_process(
             rs,
             rs_in,
-            processed_count, // frames per channel available in new_data
+            available, // frames per channel available in new_data
             rs_out,
             PERIOD_FRAMES, // we want exactly one period for ALSA
             time_stretch); // ratio
 
-        if (outFrames == 0)
+        fifo.drop(results.consumed);
+
+        if (result.produced == 0)
         {
             cerr << "Speex resample failed\n";
             // fallback: play something sane
@@ -342,7 +345,7 @@ int main(int argc, char **argv)
             outFrames = PERIOD_FRAMES;
         }
 
-        if (outFrames < PERIOD_FRAMES)
+        if (results.produced < PERIOD_FRAMES)
         {
             std::memset(rs_out + outFrames * CHANNELS, 0,
                         (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));

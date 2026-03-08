@@ -7,6 +7,7 @@
 #include "pitch.hpp"
 #include "time_stretch.hpp"
 #include "pv.hpp"
+#include "ring_i16.hpp"
 
 #define T_MS 22
 #define SAMPLE_RATE 48000
