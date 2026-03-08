@@ -314,6 +314,7 @@ int main(int argc, char **argv)
             for (;;) {
                 size_t produced = pv_process_ready(pv, tmp, tmp_size);
                 if (produced == 0) break;
+                if (wrote == 0) break;
 
                 uint32_t pushed = fifo.push(tmp, (uint32_t)produced);
             }       
@@ -325,7 +326,7 @@ int main(int argc, char **argv)
             fifo.push(tmp, (uint32_t)produced);
         }
 
-        int available = fifo.peek(rs_in, rs_in_size);
+        uint64_t available = fifo.peek(rs_in, rs_in_size);
 
         struct TimeStretchResults results = time_stretch_process(
             rs,
@@ -337,19 +338,18 @@ int main(int argc, char **argv)
 
         fifo.drop(results.consumed);
 
-        if (result.produced == 0)
+        if (results.produced == 0)
         {
             cerr << "Speex resample failed\n";
             // fallback: play something sane
-            memcpy(rs_out, buffer, sizeof(rs_out));
+            memcpy(rs_out, left, PERIOD_FRAMES * sizeof(int16_t));
             outFrames = PERIOD_FRAMES;
         }
 
         if (results.produced < PERIOD_FRAMES)
         {
-            std::memset(rs_out + outFrames * CHANNELS, 0,
-                        (PERIOD_FRAMES - outFrames) * CHANNELS * sizeof(int16_t));
-            outFrames = PERIOD_FRAMES;
+            std::memset(rs_out + results.produced, 0,
+                        (PERIOD_FRAMES - results.produced) * sizeof(int16_t));
         }
 
         // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
