@@ -246,9 +246,11 @@ int main(int argc, char **argv)
     snd_pcm_sframes_t sent = 0;
     snd_pcm_sframes_t rcvd = 0;
 
-    /* Hard code for now, variable later */
-    pv->time_stretch = 1.5;
+
+    pv->time_stretch = 1.0;
     float time_stretch = pv->time_stretch;
+
+    float target_pitch = 300.0;
 
     constexpr uint32_t FIFO_CAP = 8 * WINDOW_SIZE + 1;
     static int16_t fifo_mem[FIFO_CAP];
@@ -280,8 +282,8 @@ int main(int argc, char **argv)
         }
 
         /**************** Yin pitch detection ***************/
-        // float f0L = yinL.getPitch(left);
-        // float cL = yinL.getProbability();
+        float f0L = yinL.getPitch(left);
+        float cL = yinL.getProbability();
 
         // float f0R = yinR.getPitch(right);
         // float cR = yinR.getProbability();
@@ -290,15 +292,36 @@ int main(int argc, char **argv)
         // float cBest = (cL >= cR) ? cL : cR;
         // const char *chBest = (cL >= cR) ? "L" : "R";
 
-        // static int printCountdown = 0;
-        // if (++printCountdown >= 10)
-        // {
-        //     printCountdown = 0;
-        //     if (f0Best > 0.0f)
-        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-        //     else
-        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        // }
+        static int printCountdown = 0;
+        static float bestPitch = 0.0;
+        if (++printCountdown >= 5)
+        {
+            printCountdown = 0;
+            if (cL > 0.9f) {
+                cerr << "New Reading of f0=" << bestPitch << " Hz conf=" << cL << "\n";
+                bestPitch = f0L;
+            }
+            else
+                cerr << "Old reading of f0=" << bestPitch << " Hz conf=" << cL << "\n";
+        }
+
+        if(bestPitch > 0.0) {
+            pv->time_stretch = target_pitch / bestPitch;
+        }else {
+            pv->time_stretch = 1.0;
+        }
+
+
+        if (pv->time_stretch < 0.40)
+        {
+            pv->time_stretch = 0.40;
+        }
+        else if (pv->time_stretch > 2.5)
+        {
+            pv->time_stretch = 2.5;
+        }
+
+        float time_stretch = pv->time_stretch;
 
         /* Deinterleaven channels */
         deinterleave_stereo_i16(buffer, left, right, PERIOD_FRAMES);
