@@ -49,7 +49,7 @@ struct TimeStretchResults time_stretch_process(TimeStretchResampler &r,
     // Update ratio only if changed
     if (s != r.last_s)
     {
-        const int den = 100000;
+        const int den = 1000;
         int num = (int)std::lround((double)s * (double)den);
         if (num < 1)
             num = 1;

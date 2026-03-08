@@ -274,7 +274,6 @@ int main(int argc, char **argv)
 
 
     pv->time_stretch = 1.0;
-    float time_stretch = pv->time_stretch;
 
     float target_pitch = 300.0;
 
@@ -326,7 +325,7 @@ int main(int argc, char **argv)
         // const char *chBest = (cL >= cR) ? "L" : "R";
 
 
-        if (evalCountdown == 4)
+        if (evalCountdown == 5)
         {
             evalCountdown = 0;
             if (idx >= GOOD_THRESH) {
