@@ -15,6 +15,8 @@
 #define PERIOD_FRAMES (SAMPLE_RATE * T_MS / 1000)
 #define BUFFER_FRAMES (PERIOD_FRAMES * CHANNELS * 2)
 
+#define GOOD_THRESH 4
+
 using namespace std;
 
 

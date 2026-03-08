@@ -1,5 +1,31 @@
 #include "main.hpp"
 
+/* Helper functions */
+float median_float_rt(const float *arr, float *scratch, int n)
+{
+    if (n <= 0)
+        return 0.0f;
+
+    for (int i = 0; i < n; i++)
+        scratch[i] = arr[i];
+
+    // Insertion sort
+    for (int i = 1; i < n; i++) {
+        float key = scratch[i];
+        int j = i - 1;
+        while (j >= 0 && scratch[j] > key) {
+            scratch[j + 1] = scratch[j];
+            j--;
+        }
+        scratch[j + 1] = key;
+    }
+
+    if (n % 2 == 1)
+        return scratch[n / 2];
+    else
+        return 0.5f * (scratch[n/2 - 1] + scratch[n/2]);
+}
+
 static void deinterleave_stereo_i16(const int16_t *interleavedLR,
                                     int16_t *left,
                                     int16_t *right,
@@ -282,6 +308,13 @@ int main(int argc, char **argv)
         }
 
         /**************** Yin pitch detection ***************/
+
+        static int evalCountdown = 0;
+        static int idx = 0; 
+        static float bestPitch = 0.0;
+        static float pitchEsts[5] = {0};
+        static float scratch[5] = {0};
+
         float f0L = yinL.getPitch(left);
         float cL = yinL.getProbability();
 
@@ -292,25 +325,33 @@ int main(int argc, char **argv)
         // float cBest = (cL >= cR) ? cL : cR;
         // const char *chBest = (cL >= cR) ? "L" : "R";
 
-        static int printCountdown = 0;
-        static float bestPitch = 0.0;
-        if (++printCountdown >= 5)
+
+        if (evalCountdown == 4)
         {
-            printCountdown = 0;
-            if (cL > 0.9f) {
-                cerr << "New Reading of f0=" << bestPitch << " Hz conf=" << cL << "\n";
-                bestPitch = f0L;
+            evalCountdown = 0;
+            if (idx >= GOOD_THRESH) {
+                bestPitch = median_float_rt(pitchEsts, scratch, idx);
+                cerr << "New reading of f0= " << bestPitch << " Hz conf=" << cL << "\n";
             }
-            else
-                cerr << "Old reading of f0=" << bestPitch << " Hz conf=" << cL << "\n";
+            else {
+                cerr << "Old reading of f0= " << bestPitch << " Hz conf=" << cL << "\n";
+            }
+            idx = 0;
         }
+
+        if(cL > 0.85) {
+            pitchEsts[idx] = f0L;
+            idx++;      
+        }
+
+        
+        evalCountdown++;
 
         if(bestPitch > 0.0) {
             pv->time_stretch = target_pitch / bestPitch;
         }else {
             pv->time_stretch = 1.0;
         }
-
 
         if (pv->time_stretch < 0.40)
         {
