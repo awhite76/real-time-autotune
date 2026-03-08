@@ -316,7 +316,7 @@ int main(int argc, char **argv)
                 if (produced == 0) break;
                 if (wrote == 0) break;
 
-                uint32_t pushed = fifo.push(tmp, (uint32_t)produced);
+                fifo.push(tmp, (uint32_t)produced);
             }       
         }
 
@@ -331,7 +331,7 @@ int main(int argc, char **argv)
         struct TimeStretchResults results = time_stretch_process(
             rs,
             rs_in,
-            available, // frames per channel available in new_data
+            (int)available, // frames per channel available in new_data
             rs_out,
             PERIOD_FRAMES, // we want exactly one period for ALSA
             time_stretch); // ratio
@@ -343,7 +343,6 @@ int main(int argc, char **argv)
             cerr << "Speex resample failed\n";
             // fallback: play something sane
             memcpy(rs_out, left, PERIOD_FRAMES * sizeof(int16_t));
-            outFrames = PERIOD_FRAMES;
         }
 
         if (results.produced < PERIOD_FRAMES)
@@ -375,7 +374,6 @@ int main(int argc, char **argv)
         // }
 
         reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
-        processed_count = 0;
 
         // Playback PERIOD_FRAMES
         sent = 0;

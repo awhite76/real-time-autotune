@@ -40,8 +40,11 @@ struct TimeStretchResults time_stretch_process(TimeStretchResampler &r,
 {
     struct TimeStretchResults results;
     if (!r.st || !input || !output ||
-        inFrames <= 0 || outCapacity <= 0 || s <= 0.0f)
-        return 0;
+        inFrames <= 0 || outCapacity <= 0 || s <= 0.0f) {
+        results.produced = 0;
+	results.consumed =0;
+	return results;
+     }
 
     // Update ratio only if changed
     if (s != r.last_s)
@@ -74,11 +77,13 @@ struct TimeStretchResults time_stretch_process(TimeStretchResampler &r,
         output,
         &outLen);
 
-    results.consumed = inLen;
-    results.produced = outLen;
+    results.consumed = (uint32_t) inLen;
+    results.produced = (uint32_t) outLen;
 
-    if (err != RESAMPLER_ERR_SUCCESS)
-        return 0;
-
+    if (err != RESAMPLER_ERR_SUCCESS) {
+        results.consumed = 0;
+	results.produced = 0;
+	return results;
+    }
     return results;
 }

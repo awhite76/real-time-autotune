@@ -13,9 +13,9 @@ struct TimeStretchResampler
 
 struct TimeStretchResults 
 {
-    int produced;
-    int consumed;
-}
+    uint32_t produced;
+    uint32_t consumed;
+};
 
 /**
  * Initialize SpeexDSP resampler for interleaved multi-channel audio.
@@ -54,7 +54,7 @@ void time_stretch_destroy(TimeStretchResampler &r);
  * @param s           Resample ratio (>0)
  * @return output frames written per channel (0 on error)
  */
-int time_stretch_process(TimeStretchResampler &r,
+struct TimeStretchResults time_stretch_process(TimeStretchResampler &r,
                          const int16_t *input,
                          int inFrames,
                          int16_t *output,
