@@ -274,7 +274,6 @@ int main(int argc, char **argv)
 
 
     pv->time_stretch = 1.0;
-    float time_stretch = pv->time_stretch;
 
     float target_pitch = 300.0;
 
@@ -339,7 +338,7 @@ int main(int argc, char **argv)
             idx = 0;
         }
 
-        if(cL > 0.85) {
+        if(cL > 0.85f) {
             pitchEsts[idx] = f0L;
             idx++;      
         }
@@ -347,19 +346,34 @@ int main(int argc, char **argv)
         
         evalCountdown++;
 
-        if(bestPitch > 0.0) {
-            pv->time_stretch = target_pitch / bestPitch;
+
+        float target;
+        float delta;
+        float maxDelta = 0.04f;
+
+        if(bestPitch > 0.0f) {
+            target = target_pitch / bestPitch;
+            delta = target - pv->time_stretch;
+
+            if(delta < -maxDelta) {
+                pv->time_stretch -= maxDelta;
+            }else if(delta > maxDelta) {
+                pv->time_stretch +=maxDelta;
+            }else {
+                pv->time_stretch += delta;
+            }
         }else {
-            pv->time_stretch = 1.0;
+            pv->time_stretch = 1.0f;
         }
 
-        if (pv->time_stretch < 0.40)
+        /* Clamping */
+        if (pv->time_stretch < 0.40f)
         {
-            pv->time_stretch = 0.40;
+            pv->time_stretch = 0.40f;
         }
-        else if (pv->time_stretch > 2.5)
+        else if (pv->time_stretch > 2.5f)
         {
-            pv->time_stretch = 2.5;
+            pv->time_stretch = 2.5f;
         }
 
         float time_stretch = pv->time_stretch;
