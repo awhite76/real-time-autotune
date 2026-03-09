@@ -432,6 +432,15 @@ int main(int argc, char **argv)
         // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
         reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
 
+        f0L = yinL.getPitch(rs_out);
+        cL = yinL.getProbability();
+
+        static int printCount = 0;
+        if(++printCount >= 10) {
+            cerr << "OUTPUT f0L" << f0L << "\n";
+            cerr << "Output conf" << cL << "\n";
+        }
+
         // Playback PERIOD_FRAMES
         sent = 0;
         while (sent < PERIOD_FRAMES)
