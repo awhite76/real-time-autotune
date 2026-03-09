@@ -430,27 +430,6 @@ int main(int argc, char **argv)
         }
 
         // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
-
-        float f0Out = yinOUT.getPitch(rs_out);
-        float cOut = yinOUT.getProbability();
-
-        // float f0R = yinR.getPitch(right);
-        // float cR = yinR.getProbability();
-
-        // float f0Best = (cL >= cR) ? f0L : f0R;
-        // float cBest = (cL >= cR) ? cL : cR;
-        // const char *chBest = (cL >= cR) ? "L" : "R";
-
-        static int printCountdown = 0;
-        if (++printCountdown >= 10)
-        {
-            printCountdown = 0;
-            if (f0Out > 0.0f)
-                cerr << "output f0=" << f0Out << " Hz conf=" << cOut << "\n";
-            else
-                cerr << "output f0= bad reading\n";
-        }
-
         reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
 
         // Playback PERIOD_FRAMES
