@@ -349,7 +349,7 @@ int main(int argc, char **argv)
 
         float target;
         float delta;
-        float maxDelta = 0.04f;
+        float maxDelta = 0.02f;
 
         if(bestPitch > 0.0f) {
             target = target_pitch / bestPitch;
