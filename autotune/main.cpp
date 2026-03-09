@@ -439,6 +439,7 @@ int main(int argc, char **argv)
         if(++printCount >= 10) {
             cerr << "OUTPUT f0L" << f0L << "\n";
             cerr << "Output conf" << cL << "\n";
+            printCount = 0;
         }
 
         // Playback PERIOD_FRAMES
