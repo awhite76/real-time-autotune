@@ -227,6 +227,7 @@ int main(int argc, char **argv)
     // Two independent YIN detectors (each holds its own yinBuffer/probability)
     Yin yinL(PERIOD_FRAMES);
     Yin yinR(PERIOD_FRAMES);
+    Yin yinOUT(PERIOD_FRAMES);
 
     /************* Time stretch config *************/
     TimeStretchResampler rs;
@@ -346,7 +347,6 @@ int main(int argc, char **argv)
         
         evalCountdown++;
 
-
         float target;
         float delta;
         float maxDelta = 0.02f;
@@ -430,26 +430,6 @@ int main(int argc, char **argv)
         }
 
         // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
-
-        // float f0L = yinL.getPitch(left);
-        // float cL = yinL.getProbability();
-
-        // float f0R = yinR.getPitch(right);
-        // float cR = yinR.getProbability();
-
-        // float f0Best = (cL >= cR) ? f0L : f0R;
-        // float cBest = (cL >= cR) ? cL : cR;
-        // const char *chBest = (cL >= cR) ? "L" : "R";
-
-        // static int printCountdown = 0;
-        // if (++printCountdown >= 10)
-        // {
-        //     printCountdown = 0;
-        //     if (f0Best > 0.0f)
-        //         cerr << "best(" << chBest << "): f0=" << f0Best << " Hz conf=" << cBest << "\n";
-        //     else
-        //         cerr << "best(" << chBest << "): f0=none conf=" << cBest << "\n";
-        // }
 
         reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
 
