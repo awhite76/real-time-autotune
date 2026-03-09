@@ -325,7 +325,7 @@ int main(int argc, char **argv)
         // const char *chBest = (cL >= cR) ? "L" : "R";
 
 
-        if (evalCountdown == 4)
+        if (evalCountdown == 5)
         {
             evalCountdown = 0;
             if (idx >= GOOD_THRESH) {
