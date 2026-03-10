@@ -214,6 +214,31 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    /****************** Load .wav *********************/
+    StereoWavI16 wav = loadStereoWav_i16("../assets/twinkletwinkle_vocals.wav");
+    
+    // If you want to ensure it matches your pipeline rate:
+    if (wav.sampleRate != SAMPLE_RATE)
+    {
+        cerr << "Warning: input.wav sample rate is " << wav.sampleRate
+             << " but pipeline expects " << SAMPLE_RATE << "\n";
+    }
+    
+    // Build pitch time series (per T_MS chunk)
+    PitchSeries pitchTS = buildPitchSeries_Tms(wav, (float)1.0f * T_MS);
+    
+    cerr << "Loaded input.wav: frames=" << wav.left.size()
+         << " windowFrames=" << pitchTS.windowFrames
+         << " chunks=" << pitchTS.size() << "\n";
+    
+    // Example quick access:
+    if (pitchTS.size() > 0)
+    {
+        size_t idx = pitchTS.indexForMs(250.0f); // chunk at ~250ms
+        cerr << "Pitch @250ms: L=" << pitchTS.leftHz[idx] << "Hz"
+             << " R=" << pitchTS.rightHz[idx] << "Hz\n";
+    }
+
     /****************** audio buffers *****************/
     int16_t buffer[BUFFER_FRAMES];
     memset(buffer, 0, sizeof(buffer));
@@ -283,6 +308,12 @@ int main(int argc, char **argv)
     RingI16 fifo;
     fifo.init(fifo_mem, FIFO_CAP);
 
+    size_t file_idx = 0;
+    size_t max_file_idx = pitchTS.size();
+
+    cout << "Setup complete! Press ENTER to continue...\n";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
     while (true)
     {
         // Capture PERIOD_FRAMES
@@ -339,20 +370,33 @@ int main(int argc, char **argv)
             idx = 0;
         }
 
+        static float f0Best = 0.0f;
+        static int repeat_voice = 0;
+        static float vocalsBest = 0.0f;
+
+        int curr_idx = file_idx++ % max_file_idx;
+
+        if (pitchTS.leftHz[curr_idx] || pitchTS.rightHz[curr_idx])
+        {
+            vocalsBest = (pitchTS.leftConf[curr_idx] >= pitchTS.rightConf[curr_idx]) ? pitchTS.leftHz[curr_idx] : pitchTS.rightHz[curr_idx];
+            //repeat_vocals = 0;
+        }else {
+            vocalsBest = 0.0f;
+        }
+
         if(cL > 0.85f) {
             pitchEsts[idx] = f0L;
             idx++;      
         }
 
-        
         evalCountdown++;
 
         float target;
         float delta;
         float maxDelta = 0.02f;
 
-        if(bestPitch > 0.0f) {
-            target = target_pitch / bestPitch;
+        if(bestPitch > 0.0f && vocalsBest > 0.0f) {
+            target = vocalsBest / bestPitch;
             delta = target - pv->time_stretch;
 
             if(delta < -maxDelta) {
@@ -432,9 +476,9 @@ int main(int argc, char **argv)
         // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
         reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
 
-        for(int i = 0; i < PERIOD_FRAMES * CHANNELS; i++) {
-            buffer[i] = buffer[i] * 2;
-        }
+        // for(int i = 0; i < PERIOD_FRAMES * CHANNELS; i++) {
+        //     buffer[i] = buffer[i] * 2;
+        // }
         
         // Playback PERIOD_FRAMES
         sent = 0;
