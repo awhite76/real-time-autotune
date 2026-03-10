@@ -433,8 +433,8 @@ int main(int argc, char **argv)
             idx = 0;
         }
 
-        static float f0Best = 0.0f;
-        static int repeat_voice = 0;
+        // static float f0Best = 0.0f;
+        // static int repeat_voice = 0;
         static float vocalsBest = 0.0f;
 
         int curr_idx = file_idx++ % max_file_idx;
