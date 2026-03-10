@@ -106,17 +106,17 @@ StereoWavI16 loadStereoWav_i16(const std::string &filename)
     return out;
 }
 
-void deinterleave_stereo_i16(const int16_t *interleavedLR,
-                             int16_t *left,
-                             int16_t *right,
-                             int frames)
-{
-    for (int i = 0; i < frames; ++i)
-    {
-        left[i] = interleavedLR[2 * i + 0];
-        right[i] = interleavedLR[2 * i + 1];
-    }
-}
+// void deinterleave_stereo_i16(const int16_t *interleavedLR,
+//                              int16_t *left,
+//                              int16_t *right,
+//                              int frames)
+// {
+//     for (int i = 0; i < frames; ++i)
+//     {
+//         left[i] = interleavedLR[2 * i + 0];
+//         right[i] = interleavedLR[2 * i + 1];
+//     }
+// }
 
 // Minimal WAV writer: 16-bit PCM stereo interleaved
 void writeStereoWav_i16_interleaved(

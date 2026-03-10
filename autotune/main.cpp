@@ -166,6 +166,69 @@ bool set_hw_params(snd_pcm_t *handle, snd_pcm_stream_t stream)
     return true;
 }
 
+// Compute frames for a T_MS window
+static inline uint32_t framesForMs(uint32_t sampleRate, float ms)
+{
+    double frames = (double)sampleRate * ((double)ms / 1000.0);
+    uint32_t out = (uint32_t)(frames + 0.5);
+    return max<uint32_t>(out, 1);
+}
+
+PitchSeries buildPitchSeries_Tms(const StereoWavI16 &wav, float t_ms)
+{
+    if (wav.sampleRate == 0)
+        throw runtime_error("Invalid sample rate");
+    if (wav.left.size() != wav.right.size())
+        throw runtime_error("L/R size mismatch");
+    if (wav.left.empty())
+        throw runtime_error("Empty WAV buffers");
+    if (t_ms <= 0.0f)
+        throw runtime_error("T_MS must be > 0");
+
+    PitchSeries ps;
+    ps.sampleRate = wav.sampleRate;
+    ps.windowMs = t_ms;
+    ps.windowFrames = framesForMs(wav.sampleRate, t_ms);
+
+    const uint32_t N = ps.windowFrames;
+    const size_t totalFrames = wav.left.size();
+    const size_t chunks = totalFrames / N;
+
+    ps.leftHz.resize(chunks);
+    ps.rightHz.resize(chunks);
+    ps.leftConf.resize(chunks);
+    ps.rightConf.resize(chunks);
+
+    // Yin detectors sized to the window length
+    Yin yinL((int)N);
+    Yin yinR((int)N);
+
+    // Scratch buffers for each chunk (YIN expects contiguous int16_t*)
+    vector<int16_t> bufL(N);
+    vector<int16_t> bufR(N);
+
+    for (size_t k = 0; k < chunks; ++k)
+    {
+        const size_t offset = k * (size_t)N;
+
+        // copy chunk into contiguous buffers
+        copy_n(wav.left.begin() + offset, N, bufL.begin());
+        copy_n(wav.right.begin() + offset, N, bufR.begin());
+
+        const float f0L = yinL.getPitch(bufL.data());
+        const float cL = yinL.getProbability();
+
+        const float f0R = yinR.getPitch(bufR.data());
+        const float cR = yinR.getProbability();
+
+        ps.leftHz[k] = f0L;
+        ps.leftConf[k] = cL;
+        ps.rightHz[k] = f0R;
+        ps.rightConf[k] = cR;
+    }
+
+    return ps;
+}
 
 int main(int argc, char **argv)
 {
