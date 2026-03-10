@@ -5,6 +5,8 @@
 #include <cstring>
 #include <cstdint>
 
+using namespace std;
+
 struct PitchSeries
 {
     uint32_t sampleRate = 0;

@@ -17,10 +17,10 @@ struct StereoWavI16
 StereoWavI16 loadStereoWav_i16(const std::string &filename);
 
 // Deinterleave interleaved stereo LRLR... into L and R buffers.
-void deinterleave_stereo_i16(const int16_t *interleavedLR,
-                             int16_t *left,
-                             int16_t *right,
-                             int frames);
+// void deinterleave_stereo_i16(const int16_t *interleavedLR,
+//                              int16_t *left,
+//                              int16_t *right,
+//                              int frames);
 
 std::vector<int16_t> interleaveStereo(const StereoWavI16 &wav);
 
