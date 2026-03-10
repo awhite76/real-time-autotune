@@ -364,7 +364,7 @@ int main(int argc, char **argv)
 
     pv->time_stretch = 1.0;
 
-    float target_pitch = 300.0;
+    //float target_pitch = 300.0;
 
     constexpr uint32_t FIFO_CAP = 8 * WINDOW_SIZE + 1;
     static int16_t fifo_mem[FIFO_CAP];
