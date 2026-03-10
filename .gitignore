@@ -41,4 +41,4 @@
 *.dwo
 
 # wave files
-*.wav
+# *.wav
