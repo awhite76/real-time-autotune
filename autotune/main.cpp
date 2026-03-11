@@ -425,10 +425,10 @@ int main(int argc, char **argv)
             evalCountdown = 0;
             if (idx >= GOOD_THRESH) {
                 bestPitch = median_float_rt(pitchEsts, scratch, idx);
-                cerr << "New reading of f0= " << bestPitch << " Hz conf=" << cL << "\n";
+            //    cerr << "New reading of f0= " << bestPitch << " Hz conf=" << cL << "\n";
             }
             else {
-                cerr << "Old reading of f0= " << bestPitch << " Hz conf=" << cL << "\n";
+              //  cerr << "Old reading of f0= " << bestPitch << " Hz conf=" << cL << "\n";
             }
             idx = 0;
         }
@@ -456,7 +456,7 @@ int main(int argc, char **argv)
 
         float target;
         float delta;
-        float maxDelta = 0.2f;
+        float maxDelta = 0.006f;
 
         if(bestPitch > 0.0f && vocalsBest > 0.0f) {
             target = vocalsBest / bestPitch;
@@ -540,7 +540,7 @@ int main(int argc, char **argv)
         reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
 
          for(int i = 0; i < PERIOD_FRAMES * CHANNELS; i++) {
-             buffer[i] = buffer[i] * 7;
+             buffer[i] = buffer[i] * 10;
          }
         
         // Playback PERIOD_FRAMES
