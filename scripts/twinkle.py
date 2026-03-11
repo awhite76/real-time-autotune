@@ -4,7 +4,7 @@ import numpy as np
 import wave
 
 # Audio settings
-sample_rate = 44100  # Hz
+sample_rate = 48000  # Hz
 note_duration = 0.65  # slightly slower tempo
 amplitude = 0.5
 

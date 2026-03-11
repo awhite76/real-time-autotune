@@ -456,7 +456,7 @@ int main(int argc, char **argv)
 
         float target;
         float delta;
-        float maxDelta = 0.02f;
+        float maxDelta = 0.2f;
 
         if(bestPitch > 0.0f && vocalsBest > 0.0f) {
             target = vocalsBest / bestPitch;
@@ -539,9 +539,9 @@ int main(int argc, char **argv)
         // deinterleave_stereo_i16(rs_out, left, right, PERIOD_FRAMES);
         reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
 
-        // for(int i = 0; i < PERIOD_FRAMES * CHANNELS; i++) {
-        //     buffer[i] = buffer[i] * 2;
-        // }
+         for(int i = 0; i < PERIOD_FRAMES * CHANNELS; i++) {
+             buffer[i] = buffer[i] * 7;
+         }
         
         // Playback PERIOD_FRAMES
         sent = 0;
