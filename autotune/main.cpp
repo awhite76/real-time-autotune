@@ -540,7 +540,7 @@ int main(int argc, char **argv)
         reinterleave_stereo_i16(rs_out, rs_out, buffer, PERIOD_FRAMES);
 
          for(int i = 0; i < PERIOD_FRAMES * CHANNELS; i++) {
-             buffer[i] = buffer[i] * 10;
+             buffer[i] = buffer[i] * 5;
          }
         
         // Playback PERIOD_FRAMES
